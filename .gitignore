@@ -1,0 +1,9 @@
+node_modules/
+package-lock.json
+*.sqlite
+*.db
+*.log
+.env
+default-env.json
+.cdsrc-private.json
+.DS_Store

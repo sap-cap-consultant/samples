@@ -15,4 +15,4 @@ git clone https://github.com/sap-cap-consultant/samples.git
 cd samples/cap-soap-connectivity/producer-catalog && npm install && npm run watch
 ```
 
-Requirements: Node.js 22 or later; `@sap/cds-dk` (`npm i -g @sap/cds-dk`) for `cds watch`.
+Requirements: Node.js 22.18 or later (cap-smart-connectivity alone: 22); `@sap/cds-dk` (`npm i -g @sap/cds-dk`) for `cds watch`.

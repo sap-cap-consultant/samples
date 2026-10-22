@@ -58,8 +58,8 @@ module.exports = class ShopService extends cds.ApplicationService {
             return {
                 soapServices: ['ProductCatalog', 'ExchangeRates', 'CountryCodes', 'ShopService'].filter((s) => soap.isSoapService(s)),
                 keysOfRates: soap.getEntityKeyFields(rates.entities.Rates),
-                forbiddenHeaders: soap.Service.FORBIDDEN_SOAP_HEADERS.length,
-                strippedHeaders: Object.keys(soap.Service.stripSensitiveHeaders(inbound)),
+                forbiddenHeaders: soap.ApplicationService.FORBIDDEN_SOAP_HEADERS.length,
+                strippedHeaders: Object.keys(soap.ApplicationService.stripSensitiveHeaders(inbound)),
                 dedupedRows: soap.dedupByKeys(rows, ['ProductID']).length,
             };
         });

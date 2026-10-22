@@ -1,4 +1,4 @@
-# CountryCodes: an adapter class named by cds.requires.CountryCodes.impl, answering from a mock() (no SOAP call).
+# CountryCodes: a connector class named by cds.requires.CountryCodes.impl, answering from a mock() (no SOAP call).
 
 @server = http://localhost:4004/soap/countrycodes
 @auth = Basic alice:alice

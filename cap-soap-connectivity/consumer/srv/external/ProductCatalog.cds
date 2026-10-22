@@ -4,7 +4,7 @@ using from 'cap-soap-connectivity';
  * The ProductCatalog web service of producer-catalog (two operations).
  *
  * Served by cap-soap-connectivity at /soap/catalog/<Entity> (`@path`), and as a CAP service in this process.
- * Adapter class: ProductCatalog.js next to this file (the file convention).
+ * Connector class: ProductCatalog.js next to this file (the file convention).
  */
 @Soap
 @path: 'catalog'
@@ -50,7 +50,7 @@ service ProductCatalog {
             Warehouse : String(20);
             Quantity  : Integer;
             Reserved  : Integer;
-            /** Computed by an after('READ') handler of the adapter class */
+            /** Computed by an after('READ') handler of the connector class */
             Available : Integer;
     }
 }

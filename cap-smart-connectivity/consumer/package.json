@@ -5,8 +5,8 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
-    "cap-smart-connectivity": "^0.1.0",
-    "cap-soap-connectivity": "^0.1.0",
+    "cap-smart-connectivity": "^0.2.0",
+    "cap-soap-connectivity": "^0.2.0",
     "@sap-cloud-sdk/connectivity": "^4.7.0",
     "@sap-cloud-sdk/http-client": "^4.7.0",
     "@sap-cloud-sdk/resilience": "^4.7.0",

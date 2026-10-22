@@ -1,4 +1,4 @@
-# RestrictedService: CAP's @requires / @restrict on top of the adapter.
+# RestrictedService: CAP's @requires / @restrict on top of the connector.
 # Users (package.json, cds.requires.auth): alice is admin, bob has CompanyCode 1000, kim 2000, sam none.
 
 @server = http://localhost:5005/odata/v4/restricted

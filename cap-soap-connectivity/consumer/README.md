@@ -13,13 +13,13 @@ consumer/
 │   ├── server.js                     ← helmet, CORS and a rate limit for /soap, on bootstrap
 │   ├── external/
 │   │   ├── ProductCatalog.cds        ← @Soap.* model of producer-catalog (@path 'catalog')
-│   │   ├── ProductCatalog.js         ← its adapter class: found by the file convention (<Service>.js next to the .cds)
-│   │   ├── ExchangeRates.cds         ← @Soap.* model of producer-finance (@path 'rates', @requires, @Soap.adapter)
+│   │   ├── ProductCatalog.js         ← its connector class: found by the file convention (<Service>.js next to the .cds)
+│   │   ├── ExchangeRates.cds         ← @Soap.* model of producer-finance (@path 'rates', @requires, @Soap.connector)
 │   │   ├── CountryCodes.cds          ← a SOAP service that is only mocked
 │   │   └── wsdl/*.wsdl               ← the local WSDL files (cds.requires.<Service>.wsdl)
-│   ├── adapters/
-│   │   ├── ExchangeRates.ts          ← adapter class in TypeScript, named by @Soap.adapter
-│   │   └── CountryCodes.js           ← adapter class named by cds.requires.CountryCodes.impl, answers from mock()
+│   ├── connectors/
+│   │   ├── ExchangeRates.ts          ← connector class in TypeScript, named by @Soap.connector
+│   │   └── CountryCodes.js           ← connector class named by cds.requires.CountryCodes.impl, answers from mock()
 │   ├── shop-service.cds              ← ShopService: a CAP service on top of the SOAP services
 │   └── shop-service.js               ← srv.run / soap.read / the utility API
 └── test/http/*.http                  ← one request file per service (VS Code REST Client)
@@ -30,8 +30,8 @@ consumer/
 | Key | Purpose |
 | --- | --- |
 | `cds.requires.ProductCatalog` | `kind: "soap"`, the local `wsdl`, `credentials.destination` + `credentials.path` (appended to the destination URL) |
-| `cds.requires.ExchangeRates` | the same, plus `strict: true` (a missing adapter class stops the start) and `wsseUser`, a setting of its own that the adapter class reads from `this.options` |
-| `cds.requires.CountryCodes` | `impl`: the module of its adapter class |
+| `cds.requires.ExchangeRates` | the same, plus `strict: true` (a missing connector class stops the start) and `wsseUser`, a setting of its own that the connector class reads from `this.options` |
+| `cds.requires.CountryCodes` | `impl`: the module of its connector class |
 | `cds.requires.auth` | Mocked users: `alice` (role `finance`), `bob` (no role); password = user name |
 | `cds.query.soap` | `pageSize: 4` (small, to show `@odata.nextLink`), `multiSelectionConcurrency: 2` (fan-out batches), `pushFilters: true` |
 
@@ -54,7 +54,7 @@ JWT selects the tenant's destination.
 | `Products` | `@Soap.operation: 'FindProducts'`, `@Soap.binding: { rootRequest, rootResponse: 'Products' }`, `@Soap.path: 'Supplier.Name'` | the `item` list unwrapped, `$value` of an element with an attribute (`Price`), nested values |
 | `Stock` | `@Soap.operation: 'GetStock'`, `@Soap.rootResponse: 'Stock'`, `@Soap.filterRestriction: { mandatoryFields: ['ProductID'], multipleSelection: false }` | the fan-out of `ProductID in (...)`, the mandatory filter, the 400 for `in` beside `or` |
 
-The adapter class registers:
+The connector class registers:
 
 - `header(Products, ...)`: a plain map (`Channel`, `TraceID`): one SOAP header element per key. The backend echoes
   `Channel` into every product.
@@ -66,13 +66,13 @@ The adapter class registers:
 - `request(Stock, ...)`: one `ProductID` per call.
 - `after('READ', Stock, ...)`: an ordinary CAP handler (`Available`).
 
-### ExchangeRates (`/soap/rates`): TypeScript, `@Soap.adapter`, WS-Security, `@requires`
+### ExchangeRates (`/soap/rates`): TypeScript, `@Soap.connector`, WS-Security, `@requires`
 
 [`srv/external/ExchangeRates.cds`](srv/external/ExchangeRates.cds),
-[`srv/adapters/ExchangeRates.ts`](srv/adapters/ExchangeRates.ts),
+[`srv/connectors/ExchangeRates.ts`](srv/connectors/ExchangeRates.ts),
 [`test/http/ExchangeRates.http`](test/http/ExchangeRates.http).
 
-- `@Soap.adapter: 'srv/adapters/ExchangeRates'` names the TypeScript class (no extension: `.ts` is taken first). Node.js
+- `@Soap.connector: 'srv/connectors/ExchangeRates'` names the TypeScript class (no extension: `.ts` is taken first). Node.js
   22.18 and later load it without a build step.
 - `header(Rates, ...)` returns a structured header `{ value, name, prefix, xmlns }`: a WS-Security `UsernameToken`.
 - `@Soap.rootResponse: 'Rates.Rate'` takes precedence over `@Soap.binding.rootResponse`.
@@ -82,7 +82,7 @@ The adapter class registers:
 
 ### CountryCodes (`/soap/countrycodes`): `impl` and `mock()`
 
-[`srv/adapters/CountryCodes.js`](srv/adapters/CountryCodes.js),
+[`srv/connectors/CountryCodes.js`](srv/connectors/CountryCodes.js),
 [`test/http/CountryCodes.http`](test/http/CountryCodes.http). The class named by `cds.requires.CountryCodes.impl`
 registers a `mock()`: no destination, no WSDL loading, no HTTP. A mock's answer is final, so it filters itself.
 
@@ -99,7 +99,7 @@ Every SOAP service of the model is also an OData V4 service of the application (
 | --- | --- |
 | `Offers` | `catalog.run(SELECT ...)` on ProductCatalog (the same pipeline as its routes), `soap.read(...)` per product on `Stock` (one product per call: the fan-out is a feature of the routes), `soap.read` on ExchangeRates, the CountryCodes mock |
 | `convert(...)` | `soap.read` on ExchangeRates; 404 from the handler without a rate |
-| `soapInfo()` | `soap.isSoapService`, `soap.getEntityKeyFields`, `soap.Service.FORBIDDEN_SOAP_HEADERS`, `soap.Service.stripSensitiveHeaders`, `soap.dedupByKeys` |
+| `soapInfo()` | `soap.isSoapService`, `soap.getEntityKeyFields`, `soap.ApplicationService.FORBIDDEN_SOAP_HEADERS`, `soap.ApplicationService.stripSensitiveHeaders`, `soap.dedupByKeys` |
 
 ## Security middleware
 

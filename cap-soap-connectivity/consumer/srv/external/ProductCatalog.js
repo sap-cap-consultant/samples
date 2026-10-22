@@ -16,14 +16,14 @@ const andTerms = (where = []) => {
 const isRef = (t, name) => t?.ref?.length === 1 && t.ref[0] === name;
 
 /**
- * The adapter class of the ProductCatalog SOAP service (found by the file convention: <Service>.js next to the .cds).
+ * The connector class of the ProductCatalog SOAP service (found by the file convention: <Service>.js next to the .cds).
  * It is the CAP service of the SOAP service: one instance, hooks registered in init().
  */
-class ProductCatalog extends soap.Service {
+class ProductCatalog extends soap.ApplicationService {
     async init() {
         const { Products, Stock } = this.entities;
 
-        // SOAP headers of every call (a plain map: one element per key). Keys of soap.Service.FORBIDDEN_SOAP_HEADERS
+        // SOAP headers of every call (a plain map: one element per key). Keys of soap.ApplicationService.FORBIDDEN_SOAP_HEADERS
         // (Authorization, Cookie, ...) would be dropped. The backend echoes Channel into every product.
         this.header(Products, (req) => ({ Channel: 'SHOP-API', TraceID: req.id }));
 

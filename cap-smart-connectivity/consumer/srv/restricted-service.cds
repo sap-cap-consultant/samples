@@ -1,7 +1,7 @@
 /**
- * RestrictedService: CAP's own authorization on top of the adapter, which has none of its own.
+ * RestrictedService: CAP's own authorization on top of the connector, which has none of its own.
  *
- * `@restrict ... where` with a user attribute: CAP adds the condition to the query, the adapter pushes it to the
+ * `@restrict ... where` with a user attribute: CAP adds the condition to the query, the connector pushes it to the
  * backend. A user without the attribute gets the literal `'1' = '2'`: an empty answer without a backend call.
  * CAP checks `@restrict` only on the entity a request targets; an `$expand` of Orders/_Customer is therefore read
  * through RestrictedService.Customers (not pushed to the backend as $expand), so the restriction applies there too.

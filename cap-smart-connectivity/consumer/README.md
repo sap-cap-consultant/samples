@@ -20,7 +20,7 @@ consumer/
 │   │   ├── ProductService.cds|edmx   ← cds import of producer-products (OData V2)
 │   │   ├── SalesService.cds|edmx     ← cds import of producer-sales (OData V4)
 │   │   ├── PartnerDirectory.cds      ← the SOAP service of producer-partners, @Soap.* annotations
-│   │   ├── lib/PartnerDirectory.js   ← its adapter class (cap-soap-connectivity)
+│   │   ├── lib/PartnerDirectory.js   ← its connector class (cap-soap-connectivity)
 │   │   ├── wsdl/PartnerDirectory.wsdl
 │   │   └── extensions.cds            ← associations between the imported models (across systems)
 │   ├── catalog-service.cds           ← @remote, layer 1: reads over every backend kind
@@ -28,7 +28,7 @@ consumer/
 │   ├── reference-data-service.cds    ← @remote + @remote.cache
 │   ├── restricted-service.cds        ← @remote + @requires / @restrict
 │   ├── order-management-service.cds  ← writes, rules, deep writes, operations
-│   └── order-management-service.js   ← class extends RemoteApplicationService
+│   └── order-management-service.js   ← class extends remote.ApplicationService
 └── test/http/*.http                  ← one request file per service (VS Code REST Client)
 ```
 
@@ -70,11 +70,11 @@ therefore declares the associations the projections use, each with its ON condit
 | `cds.requires.CustomerService` / `ProductService` / `SalesService` | `kind`, `model`; `[development]`: the producer URL with basic authentication; `[production]`: a BTP destination |
 | `cds.requires.PartnerDirectory` | `kind: "soap"`, the local `wsdl`, `credentials.destination` and `credentials.path`. The destination `SMART_SAMPLES_PARTNERS` is defined in the `watch` scripts through the Cloud SDK's `destinations` environment variable |
 | `cds.requires.auth` | Mocked users: `alice` (admin), `bob` (CompanyCode 1000), `kim` (CompanyCode 2000), `sam` (no CompanyCode); password = user name |
-| `cds.query.remote` | The adapter's runtime settings: `pagesInParallel`, `search.maxRows`, `semiJoin`, `join.maxRows` (rows one source of a JOIN view may contribute; more is a 502), and the caches of aggregates and semi-join key sets (`cache.aggregates`, `cache.semiJoins`, `ttl`, `staleWhileRevalidate`, ...); `warmUp` runs the `@remote.warmUp` reads also in development (`enabled: true`) and makes the server wait for them (`await`: at most 15 seconds) |
+| `cds.query.remote` | The connector's runtime settings: `pagesInParallel`, `search.maxRows`, `semiJoin`, `join.maxRows` (rows one source of a JOIN view may contribute; more is a 502), and the caches of aggregates and semi-join key sets (`cache.aggregates`, `cache.semiJoins`, `ttl`, `staleWhileRevalidate`, ...); `warmUp` runs the `@remote.warmUp` reads also in development (`enabled: true`) and makes the server wait for them (`await`: at most 15 seconds) |
 | `cds.query.limit` | Page size when every row of a source is read |
 | `cds.log.levels.remote: "info"` | Logs every backend request: `[remote] - GET http://localhost:7007/odata/v4/sales/Orders?$select=...` |
 
-`npm run watch:trace` also sets `DEBUG=remote-service` and `LOG_TO_FILE=true`: the adapter's step-by-step trace, with
+`npm run watch:trace` also sets `DEBUG=remote-service` and `LOG_TO_FILE=true`: the connector's step-by-step trace, with
 one correlation id per request, in `logs/remote-service-latest.log`.
 
 ## The services
@@ -95,9 +95,9 @@ one correlation id per request, in `logs/remote-service-latest.log`.
 | `Orders` | producer-sales | paths into another system (`_Customer.Name`, `_Customer._Group.Region`), associations across systems, an association with a constant in its ON condition (`_ActiveItems`) |
 | `Items` | producer-sales | path into producer-products (`_Product.Name`) |
 | `OrderStatus` | none | static data (`@response.data`) |
-| `OrderLines` | producer-sales + producer-products | JOIN view: orders `join` items `left join` products (OData V4 + V2), an expression column (`i.Quantity * i.Price`), the view's WHERE, an ON constant, a mixin association `_Order`; a read by key starts at the items |
-| `PartnerCustomers` | producer-partners + producer-customers | JOIN view of a SOAP and an OData source (`@cds.persistence.skip`: the SOAP entity has a table) |
-| `GroupRegions` | producer-customers + the database | JOIN view of a remote source and the consumer's own table (`@cds.persistence.skip`) |
+| `OrderLines` | producer-sales + producer-products | JOIN view: orders `join` items `left join` products (OData V4 + V2), an expression column (`i.Quantity * i.Price`), the view's WHERE, an ON constant, a mixin association `_Order`; a read by key starts at the items (`@cds.persistence.skip`, `@cds.persistence.mock: false`) |
+| `PartnerCustomers` | producer-partners + producer-customers | JOIN view of a SOAP and an OData source (`@cds.persistence.skip`, `@cds.persistence.mock: false`: the SOAP entity has a table) |
+| `GroupRegions` | producer-customers + the database | JOIN view of a remote source and the consumer's own table (`@cds.persistence.skip`, `@cds.persistence.mock: false`) |
 | `ItemStatistics` | producer-sales | GROUP BY with `count`, `sum`, `max`; page size from `@cds.query.limit` |
 | `Partners` | producer-partners (SOAP) | a SOAP source; an association from SOAP into OData (`$expand` with `$select`, filters through it); `$search` matched here |
 
@@ -135,7 +135,7 @@ restricted entity is read through the service, so the restriction applies to it 
 ### OrderManagementService (`/odata/v4/order-management`): writes
 
 Implemented by [`srv/order-management-service.js`](srv/order-management-service.js), a class that extends
-`RemoteApplicationService` (no `@remote`: the handler file is the implementation).
+`remote.ApplicationService` (no `@remote`: the handler file is the implementation).
 [`srv/order-management-service.cds`](srv/order-management-service.cds),
 [`test/http/OrderManagementService.http`](test/http/OrderManagementService.http).
 
@@ -152,7 +152,7 @@ Implemented by [`srv/order-management-service.js`](srv/order-management-service.
 
 Two rules worth knowing:
 
-- CAP validates the client's data before the adapter sees it: a client value longer than the element is a 400, so
+- CAP validates the client's data before the connector sees it: a client value longer than the element is a 400, so
   `@remote.write.truncate` is for values computed by `@remote.write.value` or set by a handler.
 - `@mandatory` is checked on every row of a deep write, also on a row that updates an existing child.
 
@@ -160,7 +160,7 @@ Two rules worth knowing:
 
 [`srv/external/PartnerDirectory.cds`](srv/external/PartnerDirectory.cds) models the operation `GetPartners` as the
 entity `Partners` with `@Soap.operation`, `@Soap.binding.rootResponse` and `@Soap.path` (the nested `Contact.Email`).
-The adapter class [`srv/external/lib/PartnerDirectory.js`](srv/external/lib/PartnerDirectory.js) (found by the file
+The connector class [`srv/external/lib/PartnerDirectory.js`](srv/external/lib/PartnerDirectory.js) (found by the file
 convention `lib/<Service>.js`) turns the request's key and its `PartnerID` / `Country` terms into the operation's
 input; everything else is evaluated in memory. The SOAP service is also served on its own at
 `/soap/partnerdirectory/Partners` by `cap-soap-connectivity`.

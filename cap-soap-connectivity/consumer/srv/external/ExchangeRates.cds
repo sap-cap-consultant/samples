@@ -3,12 +3,12 @@ using from 'cap-soap-connectivity';
 /**
  * The ExchangeRates web service of producer-finance. It requires a WS-Security UsernameToken SOAP header.
  *
- * Adapter class: srv/adapters/ExchangeRates.ts (TypeScript), named by `@Soap.adapter`. `@requires` protects its
- * /soap routes (401 without a user, 403 without the role). `strict: true` in cds.requires: a missing adapter class would
+ * Connector class: srv/connectors/ExchangeRates.ts (TypeScript), named by `@Soap.connector`. `@requires` protects its
+ * /soap routes (401 without a user, 403 without the role). `strict: true` in cds.requires: a missing connector class would
  * stop the start instead of answering 501.
  */
 @Soap
-@Soap.adapter: 'srv/adapters/ExchangeRates'
+@Soap.connector: 'srv/connectors/ExchangeRates'
 @path        : 'rates'
 @requires    : 'finance'
 service ExchangeRates {

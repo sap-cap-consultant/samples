@@ -2,7 +2,7 @@
  * OrderManagementService: writes, write rules, deep writes, a non-CRUD API, actions and functions.
  *
  * No `@remote` here: the service has a handler file (order-management-service.js) whose class extends
- * RemoteApplicationService, so it adds handlers of its own and keeps every generic behavior.
+ * remote.ApplicationService, so it adds handlers of its own and keeps every generic behavior.
  */
 using { CustomerService as customers } from './external/CustomerService';
 using { SalesService as sales } from './external/SalesService';

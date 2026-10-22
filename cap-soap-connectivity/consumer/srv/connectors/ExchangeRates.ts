@@ -15,10 +15,10 @@ const valuesOf = (where: any[] = [], element: string): unknown[] => {
 };
 
 /**
- * The adapter class of the ExchangeRates SOAP service, in TypeScript, found through `@Soap.adapter` on the service.
+ * The connector class of the ExchangeRates SOAP service, in TypeScript, found through `@Soap.connector` on the service.
  * Node.js 22.18 and later load it without a build step (type stripping); `cds watch` with tsx works too.
  */
-export default class ExchangeRates extends soap.Service {
+export default class ExchangeRates extends soap.ApplicationService {
     async init(): Promise<void> {
         const { Rates } = this.entities;
 

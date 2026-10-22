@@ -2,7 +2,7 @@
 
 A runnable landscape that shows what [`cap-soap-connectivity`](https://www.npmjs.com/package/cap-soap-connectivity)
 does: legacy SOAP web services become read-only, OData-style entities of a [SAP CAP](https://cap.cloud.sap/docs/)
-(Node.js) application, with `@Soap.*` annotations and one adapter class per service.
+(Node.js) application, with `@Soap.*` annotations and one connector class per service.
 
 ---
 
@@ -40,10 +40,10 @@ Each app has its own README: [producer-catalog](producer-catalog/README.md),
         ▼ /soap/<path>/<Entity>    ▼ /odata/v4/shop
 ┌───────────────────────── consumer (4004) ──────────────────────────┐
 │ ProductCatalog        ExchangeRates          CountryCodes          │
-│ (file convention)     (@Soap.adapter, .ts)   (impl, mock())        │
+│ (file convention)     (@Soap.connector, .ts) (impl, mock())        │
 │        ▲                     ▲                     ▲               │
 │        └──────── ShopService (in-process: srv.run, soap.read) ─────┤
-│                       cap-soap-connectivity                         │
+│                       cap-soap-connectivity                        │
 └────────┬─────────────────────┬─────────────────────────────────────┘
          │ SOAP 1.1            │ SOAP 1.1 + WS-Security header
          ▼                     ▼
@@ -61,7 +61,7 @@ Each app has its own README: [producer-catalog](producer-catalog/README.md),
 
 ## ▶️ Running the sample locally
 
-**Prerequisites:** Node.js 22.18 or later (it loads the TypeScript adapter class without a build step), the CAP
+**Prerequisites:** Node.js 22.18 or later (it loads the TypeScript connector class without a build step), the CAP
 development kit for `cds watch` (`npm i -g @sap/cds-dk`), and for trying it out the VS Code
 [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) extension (or any HTTP client).
 
@@ -81,12 +81,12 @@ cd cap-soap-connectivity/consumer && npm install && npm run watch
 The `watch` script defines the two destinations (`SOAP_SAMPLES_CATALOG`, `SOAP_SAMPLES_FINANCE`) through the Cloud SDK's
 `destinations` environment variable. On Windows set that variable as in the script and run `cds watch --port 4004`.
 
-The boot log names the adapter class of each SOAP service and how it was found:
+The boot log names the connector class of each SOAP service and how it was found:
 
 ```text
 [soap] - serving ProductCatalog { at: ['/soap/catalog'], impl: 'srv/external/ProductCatalog.js' }
-[soap] - serving ExchangeRates { at: ['/soap/rates'], impl: 'srv/adapters/ExchangeRates.ts' }
-[soap] - serving CountryCodes { at: ['/soap/countrycodes'], impl: 'srv/adapters/CountryCodes.js' }
+[soap] - serving ExchangeRates { at: ['/soap/rates'], impl: 'srv/connectors/ExchangeRates.ts' }
+[soap] - serving CountryCodes { at: ['/soap/countrycodes'], impl: 'srv/connectors/CountryCodes.js' }
 ```
 
 ---
@@ -99,7 +99,7 @@ producer terminals log each SOAP call with its input and header.
 | File | Covers |
 | --- | --- |
 | [`ProductCatalog.http`](consumer/test/http/ProductCatalog.http) | query options, push-down, paging with `@odata.nextLink`, read by key, fan-out, mandatory filters, errors, the CAP-served endpoint |
-| [`ExchangeRates.http`](consumer/test/http/ExchangeRates.http) | `@requires` (401 / 403), WS-Security header, TypeScript adapter, fan-out with `$orderby` / `$top` / `$count` |
+| [`ExchangeRates.http`](consumer/test/http/ExchangeRates.http) | `@requires` (401 / 403), WS-Security header, TypeScript connector, fan-out with `$orderby` / `$top` / `$count` |
 | [`CountryCodes.http`](consumer/test/http/CountryCodes.http) | `mock()` |
 | [`ShopService.http`](consumer/test/http/ShopService.http) | the SOAP services in-process: `srv.run`, `soap.read`, the utility API |
 
@@ -124,23 +124,23 @@ Model and code files are under `consumer/srv/`, requests under `consumer/test/ht
 | `item` lists and `$value` of an element with attributes | `ProductCatalog.Products` | `ProductCatalog.http` |
 | A parsed `xsd:date` as a `Date` element | `ExchangeRates.Rates.ValidOn` | `ExchangeRates.http` |
 | `@Soap.filterRestriction`: `mandatoryFields`, `multipleSelection: false` (fan-out) | `ProductCatalog.Stock`, `ExchangeRates.Rates` | both |
-| `@Soap.adapter` on the service | `external/ExchangeRates.cds` | `ExchangeRates.http` |
+| `@Soap.connector` on the service | `external/ExchangeRates.cds` | `ExchangeRates.http` |
 | `@requires` on a SOAP service (401 / 403 on the routes) | `external/ExchangeRates.cds` | `ExchangeRates.http` |
 
-### Adapter class (`soap.Service`)
+### Connector class (`soap.ApplicationService`)
 
 | Feature | Where | Request |
 | --- | --- | --- |
 | Found by the file convention (`<Service>.js` next to the `.cds`) | `external/ProductCatalog.js` | `ProductCatalog.http` |
-| Named by `@Soap.adapter`, written in TypeScript | `adapters/ExchangeRates.ts` | `ExchangeRates.http` |
-| Named by `cds.requires.<Service>.impl` | `adapters/CountryCodes.js` | `CountryCodes.http` |
+| Named by `@Soap.connector`, written in TypeScript | `connectors/ExchangeRates.ts` | `ExchangeRates.http` |
+| Named by `cds.requires.<Service>.impl` | `connectors/CountryCodes.js` | `CountryCodes.http` |
 | `strict: true` (a missing class stops the start) | `package.json`, `ExchangeRates` | |
 | `header()`: a plain map | `external/ProductCatalog.js` | `ProductCatalog.http` |
-| `header()`: a structured WS-Security header, reading `this.options` | `adapters/ExchangeRates.ts` | `ExchangeRates.http` |
-| `request()`: the operation's input from the query | both adapter classes | both |
+| `header()`: a structured WS-Security header, reading `this.options` | `connectors/ExchangeRates.ts` | `ExchangeRates.http` |
+| `request()`: the operation's input from the query | both connector classes | both |
 | `__filterPushedDown` (and when not to set it: `$count`, no `$top`, an inexact term) | `external/ProductCatalog.js` | `ProductCatalog.http` |
 | `response()`: transform the raw entries | `external/ProductCatalog.js` | `ProductCatalog.http` |
-| `mock()` | `adapters/CountryCodes.js` | `CountryCodes.http` |
+| `mock()` | `connectors/CountryCodes.js` | `CountryCodes.http` |
 | CAP handlers on a SOAP service (`after('READ')`) | `external/ProductCatalog.js` | `ProductCatalog.http` |
 
 ### Routes and query options
@@ -160,7 +160,7 @@ Model and code files are under `consumer/srv/`, requests under `consumer/test/ht
 | --- | --- | --- |
 | `srv.run(SELECT ...)` on a SOAP service | `shop-service.js` | `ShopService.http` |
 | `soap.read(...)` | `shop-service.js` | `ShopService.http` |
-| `soap.isSoapService`, `soap.getEntityKeyFields`, `soap.dedupByKeys`, `soap.Service.FORBIDDEN_SOAP_HEADERS`, `soap.Service.stripSensitiveHeaders` | `shop-service.js` (`soapInfo`) | `ShopService.http` |
+| `soap.isSoapService`, `soap.getEntityKeyFields`, `soap.dedupByKeys`, `soap.ApplicationService.FORBIDDEN_SOAP_HEADERS`, `soap.ApplicationService.stripSensitiveHeaders` | `shop-service.js` (`soapInfo`) | `ShopService.http` |
 
 ### Configuration and security
 

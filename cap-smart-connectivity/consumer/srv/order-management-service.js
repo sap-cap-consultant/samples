@@ -1,15 +1,15 @@
 const cds = require('@sap/cds');
-const { RemoteApplicationService } = require('cap-smart-connectivity');
+const { remote } = require('cap-smart-connectivity');
 
 const { SELECT } = cds.ql;
 
 /**
- * The implementation of OrderManagementService: RemoteApplicationService plus handlers of its own.
+ * The implementation of OrderManagementService: remote.ApplicationService plus handlers of its own.
  *
  * Handlers registered before `super.init()` run before the generic ones; an `on` handler replaces the generic one
  * unless it calls `next()`.
  */
-class OrderManagementService extends RemoteApplicationService {
+class OrderManagementService extends remote.ApplicationService {
     async init() {
         const { Orders, Entries } = this.entities;
 
@@ -20,7 +20,7 @@ class OrderManagementService extends RemoteApplicationService {
             req.data.OrderDate ??= new Date().toISOString();
         });
 
-        // A bound action without a source operation: reads and writes through the adapter's pipeline.
+        // A bound action without a source operation: reads and writes through the connector's pipeline.
         // readSource / writeSource skip the service's handlers and CAP's authorization: the request is authorized
         // here already (it reached this handler).
         this.on('release', Entries, async (req) => {

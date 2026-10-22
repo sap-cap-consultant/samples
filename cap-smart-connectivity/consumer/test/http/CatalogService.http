@@ -216,7 +216,7 @@ Authorization: {{auth}}
 
 ### -------------------------------------------------------------- SOAP (producer-partners)
 
-### Country eq 'DE' is passed to the operation by the adapter class (srv/external/lib/PartnerDirectory.js)
+### Country eq 'DE' is passed to the operation by the connector class (srv/external/lib/PartnerDirectory.js)
 GET {{server}}/Partners?$filter=Country eq 'DE'&$select=PartnerID,Name,Country,Email
 Authorization: {{auth}}
 

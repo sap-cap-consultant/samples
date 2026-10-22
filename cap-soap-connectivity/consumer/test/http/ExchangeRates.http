@@ -1,4 +1,4 @@
-# ExchangeRates: a TypeScript adapter class named by @Soap.adapter, a WS-Security SOAP header, @requires on the routes.
+# ExchangeRates: a TypeScript connector class named by @Soap.connector, a WS-Security SOAP header, @requires on the routes.
 # Users: alice has the role finance, bob has none.
 
 @server = http://localhost:4004/soap/rates

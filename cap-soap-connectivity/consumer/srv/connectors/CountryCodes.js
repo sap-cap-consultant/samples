@@ -8,13 +8,13 @@ const COUNTRIES = [
 ];
 
 /**
- * The adapter class of the CountryCodes SOAP service, named by `impl` in cds.requires.CountryCodes.
+ * The connector class of the CountryCodes SOAP service, named by `impl` in cds.requires.CountryCodes.
  *
  * mock() replaces the SOAP call: no destination, no WSDL loading, no HTTP. Its answer is final (no response() hooks,
  * no @Soap.path mapping, no in-memory $filter / paging), so the mock applies the filter it supports itself.
  * A registered mock is always active: register it only in development or test code.
  */
-class CountryCodes extends soap.Service {
+class CountryCodes extends soap.ApplicationService {
     async init() {
         const { Countries } = this.entities;
         this.mock(Countries, (req) => {

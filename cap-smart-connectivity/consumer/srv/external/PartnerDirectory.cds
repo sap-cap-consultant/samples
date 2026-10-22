@@ -2,7 +2,7 @@ using from 'cap-soap-connectivity';   // the @Soap.* vocabulary: cds compile che
 
 /**
  * The SOAP web service of producer-partners, modelled for cap-soap-connectivity. cds.requires.PartnerDirectory has
- * kind 'soap', the local WSDL and the destination; the adapter class is lib/PartnerDirectory.js.
+ * kind 'soap', the local WSDL and the destination; the connector class is lib/PartnerDirectory.js.
  */
 @Soap
 service PartnerDirectory {

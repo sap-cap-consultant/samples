@@ -15,11 +15,11 @@ const valuesOf = (where, element) => {
 };
 
 /**
- * Adapter class of the SOAP service (found by the file convention: lib/<Service>.js next to the .cds file).
+ * Connector class of the SOAP service (found by the file convention: lib/<Service>.js next to the .cds file).
  * The operation takes PartnerID (any number) and Country; everything else of the request is evaluated in memory
  * by the cap-soap-connectivity, and again by cap-smart-connectivity for the projections on top.
  */
-class PartnerDirectory extends soap.Service {
+class PartnerDirectory extends soap.ApplicationService {
     async init() {
         const { Partners } = this.entities;
 

@@ -47,7 +47,7 @@ Each app has its own README: [producer-customers](producer-customers/README.md),
 │ OverviewService ──► CatalogService          ReferenceDataService (cache)           │
 │   (layer 2)          (layer 1, JOIN views)  RestrictedService (@restrict)          │
 │                                             OrderManagementService (writes)        │
-│              cap-smart-connectivity            own db: Regions             │
+│              cap-smart-connectivity            own db: Regions                     │
 └─────────┬──────────────────────┬──────────────────────┬──────────────────────┬─────┘
           │ OData V4             │ OData V2             │ OData V4             │ SOAP
           ▼                      ▼                      ▼                      ▼
@@ -64,7 +64,7 @@ Each app has its own README: [producer-customers](producer-customers/README.md),
 | `producer-products` | OData V2 (CAP + `@cap-js-community/odata-v2-adapter`) | products (one `sap:filterable="false"` field, a date-time), categories | 8008 |
 | `producer-sales` | OData V4 (CAP), writable | orders, items, projects, packages, bookings, and a non-CRUD ledger API; bound and unbound operations | 7007 |
 | `producer-partners` | SOAP 1.1 (plain Node.js, `soap`) | partners with a nested contact, one operation `GetPartners` | 6006 |
-| `consumer` | | five services, all served by `RemoteApplicationService` | 5005 |
+| `consumer` | | five services, all served by `remote.ApplicationService` | 5005 |
 
 The data is linked across systems: an order (producer-sales) has a customer (producer-customers) and items whose
 products live in producer-products; a customer group (producer-customers) points to a region in the consumer's own
@@ -102,13 +102,13 @@ OData services use the BTP destinations `SMART_SAMPLES_CUSTOMERS`, `SMART_SAMPLE
 The scripts set the port with `PORT=<port> ...`, which works in macOS / Linux shells. On Windows run
 `cds watch --port <port>` (and for the consumer set the `destinations` variable as in its `watch` script).
 
-The boot log of the consumer names `RemoteApplicationService` as the implementation of the `@remote` services and the
+The boot log of the consumer names `remote.ApplicationService` as the implementation of the `@remote` services and the
 class of `order-management-service.js` for OrderManagementService:
 
 ```text
 [cds] - serving CatalogService {
   at: [ '/odata/v4/catalog' ],
-  impl: 'node_modules/cap-smart-connectivity/src/lib/RemoteApplicationService.js'
+  impl: 'node_modules/cap-smart-connectivity/src/lib/ApplicationService.js'
 }
 ```
 
@@ -146,7 +146,7 @@ Where each feature of the package is shown. Model files are under `consumer/srv/
 | Structured field (`Address.City as City`) | `CatalogService.Customers` | `CatalogService.http` |
 | Path column, one hop / two hops / into another system / into the database | `CatalogService.Customers`, `.Orders`, `.Items` | `CatalogService.http` |
 | JOIN views: inner and left joins, three sources over two systems, a SOAP source, a database source, an expression column, the view's WHERE, ON constants, a mixin association; reads by key, pushed filters, `$search`, `$orderby`, `$count`; rows per source capped by `cds.query.remote.join.maxRows` | `CatalogService.OrderLines`, `.PartnerCustomers`, `.GroupRegions` | `CatalogService.http` |
-| `@cds.persistence.skip` on a JOIN view that joins a remote entity with one that has a table | `CatalogService.PartnerCustomers`, `.GroupRegions` | |
+| `@cds.persistence.skip` and `@cds.persistence.mock: false` on the JOIN views (no database view; `cds watch` keeps the skip) | `CatalogService.OrderLines`, `.PartnerCustomers`, `.GroupRegions` | |
 | Calculated column (`left`, `concat`, `coalesce`) | `CatalogService.Customers` | `CatalogService.http` |
 | `left(...)` filter pushed as `startswith` | `CatalogService.Customers.Initial` | `CatalogService.http` |
 | Boolean flag pushed as `Field = 'v'`; `@remote.pushdown: false` | `CatalogService.Customers.IsBlocked`, `.IsActive` | `CatalogService.http` |
@@ -182,7 +182,7 @@ Where each feature of the package is shown. Model files are under `consumer/srv/
 | `Date` over a date-time source (`ReleasedAt as ReleaseDate : Date`) | `CatalogService.Products` | `CatalogService.http` |
 | `@remote.paging: false` | `CatalogService.Categories` | `CatalogService.http` |
 | `@remote.search.maxRows` | `CatalogService.Products` | |
-| SOAP through `cap-soap-connectivity`: model, adapter class, key and filter push to the operation | `CatalogService.Partners`, `external/PartnerDirectory.*` | `CatalogService.http` |
+| SOAP through `cap-soap-connectivity`: model, connector class, key and filter push to the operation | `CatalogService.Partners`, `external/PartnerDirectory.*` | `CatalogService.http` |
 | From SOAP into OData: `$expand` with `$select` of renamed columns, filters through the association, `$search` on the SOAP entity | `CatalogService.Partners` | `CatalogService.http` |
 | Development credentials vs. production destinations | `consumer/package.json` | |
 
@@ -211,7 +211,7 @@ Where each feature of the package is shown. Model files are under `consumer/srv/
 | --- | --- | --- |
 | CREATE / UPDATE / DELETE through a projection with aliases | `OrderManagementService.Orders` | `OrderManagementService.http` |
 | The projection's WHERE on writes (value filled in, contradiction 400, outside 404) | `OrderManagementService.Orders` | `OrderManagementService.http` |
-| Subclass of `RemoteApplicationService` with `before` / `on` handlers | `order-management-service.js` | `OrderManagementService.http` |
+| Subclass of `remote.ApplicationService` with `before` / `on` handlers | `order-management-service.js` | `OrderManagementService.http` |
 | Backend-only `@readonly` value set by a handler | `OrderManagementService.Orders.Channel` | `OrderManagementService.http` |
 | `@remote.assert`, `@remote.assert.target`, `@remote.assert.args`, i18n messages, `MULTIPLE_ERRORS` | `OrderManagementService.Orders`, `.Bookings` | `OrderManagementService.http` |
 | `@remote.write.value`, `@remote.write.truncate` | `OrderManagementService.Orders`, `.Bookings` | `OrderManagementService.http` |
@@ -238,7 +238,7 @@ GET /odata/v4/catalog/Orders?$filter=_Customer/_Group/Region eq 'AMER'&$select=I
 [remote] - GET http://localhost:7007/odata/v4/sales/Orders?$select=ID,Customer&$filter=(Customer eq 'C004' or Customer eq 'C005')&...
 ```
 
-For the adapter's step-by-step trace, start the consumer with `npm run watch:trace` (`DEBUG=remote-service`,
+For the connector's step-by-step trace, start the consumer with `npm run watch:trace` (`DEBUG=remote-service`,
 `LOG_TO_FILE=true`) and follow one request by its correlation id in `consumer/logs/remote-service-latest.log`.
 
 ---

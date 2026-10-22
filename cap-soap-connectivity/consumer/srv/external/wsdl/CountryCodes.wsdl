@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- The contract of a country code service. The sample does not call it: its adapter class answers from a mock(). -->
+<!-- The contract of a country code service. The sample does not call it: its connector class answers from a mock(). -->
 <definitions name="CountryCodes"
              targetNamespace="urn:samples:country-codes"
              xmlns="http://schemas.xmlsoap.org/wsdl/"

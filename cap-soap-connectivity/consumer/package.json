@@ -5,7 +5,7 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
-    "cap-soap-connectivity": "^0.1.0",
+    "cap-soap-connectivity": "^0.2.0",
     "@sap-cloud-sdk/connectivity": "^4.7.0",
     "@sap-cloud-sdk/http-client": "^4.7.0",
     "@sap/cds": "^10",
@@ -51,7 +51,7 @@
         "credentials": {
           "destination": "SOAP_SAMPLES_COUNTRIES"
         },
-        "impl": "srv/adapters/CountryCodes"
+        "impl": "srv/connectors/CountryCodes"
       },
       "auth": {
         "kind": "mocked",

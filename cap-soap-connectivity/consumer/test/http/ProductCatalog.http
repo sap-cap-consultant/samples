@@ -61,7 +61,7 @@ Authorization: {{auth}}
 
 ### -------------------------------------------------------------- Stock (GetStock: one product per call)
 
-### One product: one SOAP call; Available is computed by an after('READ') handler of the adapter class
+### One product: one SOAP call; Available is computed by an after('READ') handler of the connector class
 GET {{server}}/Stock?$filter=ProductID eq 'P004'
 Authorization: {{auth}}
 

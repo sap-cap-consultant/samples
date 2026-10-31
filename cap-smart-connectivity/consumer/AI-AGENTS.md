@@ -6,7 +6,7 @@ agents through the [Model Context Protocol](https://modelcontextprotocol.io) by 
 [`@cap-js/mcp`](https://cap.cloud.sap/docs/guides/protocols/mcp): no tool code, no second integration.
 
 ```diagram
-AI agent (Claude Code, VS Code, Joule, ...)        Fiori / any OData client
+AI agent (any MCP client)                          Fiori / any OData client
           │ MCP: describe · query · call                  │ OData V4
           ▼                                               ▼
    /mcp/catalog, /mcp/restricted           /odata/v4/catalog, /odata/v4/restricted
@@ -37,8 +37,8 @@ AI agent (Claude Code, VS Code, Joule, ...)        Fiori / any OData client
 | File | Purpose |
 | --- | --- |
 | [srv/mcp.cds](srv/mcp.cds) | `@odata @mcp` on CatalogService and RestrictedService, with `@mcp.instructions` (what the agent is told about the systems and codes) |
-| [package.json](package.json) | the dependency `@cap-js/mcp`; `cds.mcp.prefix` (tool names `CatalogService-query`, ...), `cds.mcp.autowire` (the mocked user of the local agent) |
-| [test/http/MCP.http](test/http/MCP.http) | the requests of this page as raw MCP calls (VS Code REST Client) |
+| [package.json](package.json) | the dependency `@cap-js/mcp`; `cds.mcp.prefix` (tool names `CatalogService-query`, ...), `cds.mcp.autowire` (the mocked user of the automatic registration) |
+| [test/http/MCP.http](test/http/MCP.http) | the requests of this page as raw MCP calls, for any HTTP client that runs `.http` files |
 
 `@mcp` is a protocol annotation like `@odata`; a service that names protocols is served by those only, so both are
 named and every OData endpoint and `test/http` request stays as it is. Each MCP endpoint serves three tools:
@@ -67,21 +67,36 @@ both endpoints of each service:
 
 ## 🤖 Connecting an agent
 
-**Claude Code, OpenCode: automatic.** Under `cds watch` (profile `development`) the plugin registers every MCP
-endpoint with the local agents when the server starts, and removes them when it stops: entries `cds:CatalogService`
-and `cds:RestrictedService` in `~/.claude.json` (`mcpServers`) and, if it exists, `~/.config/opencode/opencode.json`.
-They carry a basic-authentication header of `cds.mcp.autowire` (here the mocked user `alice`). A server that is
-killed (not stopped) leaves its entries behind; the next start overwrites them. Set `"autowire": false` under
-`cds.mcp` to turn it off.
+Any AI agent or MCP client that supports remote MCP servers over Streamable HTTP can use the endpoints. Register each
+endpoint in the agent's MCP configuration with these settings:
 
-**Any other client, or another user:** register the endpoint yourself, e.g. for Claude Code as `bob`:
+| Setting | Value |
+| --- | --- |
+| Transport | Streamable HTTP (often named `http`); the endpoints are stateless, every request is one POST |
+| URL | `http://localhost:5005/mcp/catalog` or `http://localhost:5005/mcp/restricted` |
+| Header | `Authorization: Basic <user:password in Base64>`: `YWxpY2U6YWxpY2U=` is `alice:alice`, `Ym9iOmJvYg==` is `bob:bob`, `a2ltOmtpbQ==` is `kim:kim` |
 
-```bash
-claude mcp add --transport http catalog-bob http://localhost:5005/mcp/restricted --header "Authorization: Basic Ym9iOmJvYg=="
+The file and the key names depend on the agent; a typical entry:
+
+```json
+{
+  "catalog": {
+    "type": "http",
+    "url": "http://localhost:5005/mcp/catalog",
+    "headers": { "Authorization": "Basic YWxpY2U6YWxpY2U=" }
+  }
+}
 ```
 
-(`Ym9iOmJvYg==` is `bob:bob` in Base64.) Then ask the agent in plain language; it calls `describe` first and writes
-the CQL itself.
+Register the same endpoint once per user to compare what each user gets (e.g. `restricted-bob`, `restricted-kim`).
+Then ask the agent in plain language; it calls `describe` first and writes the CQL itself.
+
+**Automatic registration.** Under `cds watch` (profile `development`) `@cap-js/mcp` also registers the endpoints with
+the local agents it supports (see its [documentation](https://cap.cloud.sap/docs/guides/protocols/mcp)) when the
+server starts, and removes them when it stops: entries `cds:CatalogService` and `cds:RestrictedService` in the agents'
+configuration files in the user's home directory, with a basic-authentication header of `cds.mcp.autowire` (here the
+mocked user `alice`). A server that is killed (not stopped) leaves its entries behind; the next start overwrites them.
+Set `"autowire": false` under `cds.mcp` to turn it off.
 
 ---
 

@@ -10,6 +10,10 @@ Runnable SAP CAP landscapes for two npm packages:
 Each folder has its own README with the start order of the producers and the consumer, and `test/http/*.http` files
 with ready-made requests.
 
+**AI agents:** the cap-smart-connectivity consumer serves its services over MCP as well (SAP's `@cap-js/mcp`): an agent
+such as Claude Code asks in plain language and gets answers from all four backends, as the calling user. See
+[cap-smart-connectivity/consumer/AI-AGENTS.md](cap-smart-connectivity/consumer/AI-AGENTS.md).
+
 ```bash
 git clone https://github.com/sap-cap-consultant/samples.git
 cd samples/cap-soap-connectivity/producer-catalog && npm install && npm run watch

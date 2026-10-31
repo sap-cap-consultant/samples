@@ -11,7 +11,8 @@
     "@sap-cloud-sdk/http-client": "^4.7.0",
     "@sap-cloud-sdk/resilience": "^4.7.0",
     "@sap/cds": "^10",
-    "express": "^4"
+    "express": "^4",
+    "@cap-js/mcp": "1.5.0"
   },
   "engines": {
     "node": ">=22"
@@ -145,6 +146,13 @@
     "log": {
       "levels": {
         "remote": "info"
+      }
+    },
+    "mcp": {
+      "prefix": true,
+      "autowire": {
+        "user": "alice",
+        "password": "alice"
       }
     }
   }

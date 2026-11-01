@@ -98,10 +98,10 @@ producer terminals log each SOAP call with its input and header.
 
 | File | Covers |
 | --- | --- |
-| [`ProductCatalog.http`](consumer/test/http/ProductCatalog.http) | query options, push-down, paging with `@odata.nextLink`, read by key, fan-out, mandatory filters, errors, the CAP-served endpoint |
+| [`ProductCatalog.http`](consumer/test/http/ProductCatalog.http) | query options, push-down, paging with `@odata.nextLink`, read by key, the short routes, fan-out, `multipleSelection: true`, mandatory filters, errors, the hints in `$metadata`, the CAP-served endpoint |
 | [`ExchangeRates.http`](consumer/test/http/ExchangeRates.http) | `@requires` (401 / 403), WS-Security header, TypeScript connector, fan-out with `$orderby` / `$top` / `$count` |
 | [`CountryCodes.http`](consumer/test/http/CountryCodes.http) | `mock()` |
-| [`ShopService.http`](consumer/test/http/ShopService.http) | the SOAP services in-process: `srv.run`, `soap.read`, the utility API |
+| [`ShopService.http`](consumer/test/http/ShopService.http) | the SOAP services in-process: `srv.run` with `SELECT.__skipPagination`, `soap.read`, `soap.createRequest`, the utility API |
 
 Users (password = user name): `alice` (role `finance`), `bob` (no role).
 
@@ -124,6 +124,7 @@ Model and code files are under `consumer/srv/`, requests under `consumer/test/ht
 | `item` lists and `$value` of an element with attributes | `ProductCatalog.Products` | `ProductCatalog.http` |
 | A parsed `xsd:date` as a `Date` element | `ExchangeRates.Rates.ValidOn` | `ExchangeRates.http` |
 | `@Soap.filterRestriction`: `mandatoryFields`, `multipleSelection: false` (fan-out) | `ProductCatalog.Stock`, `ExchangeRates.Rates` | both |
+| `@Soap.filterRestriction: { multipleSelection: true }`: a key list stays one call, the hook passes it | `ProductCatalog.Products` | `ProductCatalog.http` |
 | `@Soap.connector` on the service | `external/ExchangeRates.cds` | `ExchangeRates.http` |
 | `@requires` on a SOAP service (401 / 403 on the routes) | `external/ExchangeRates.cds` | `ExchangeRates.http` |
 
@@ -134,11 +135,12 @@ Model and code files are under `consumer/srv/`, requests under `consumer/test/ht
 | Found by the file convention (`<Service>.js` next to the `.cds`) | `external/ProductCatalog.js` | `ProductCatalog.http` |
 | Named by `@Soap.connector`, written in TypeScript | `connectors/ExchangeRates.ts` | `ExchangeRates.http` |
 | Named by `cds.requires.<Service>.impl` | `connectors/CountryCodes.js` | `CountryCodes.http` |
-| `strict: true` (a missing class stops the start) | `package.json`, `ExchangeRates` | |
+| `strict: true` (a missing class stops the start); `cds.features.strict` for every SOAP service (profile `production`) | `package.json`, `ExchangeRates` | |
 | `header()`: a plain map | `external/ProductCatalog.js` | `ProductCatalog.http` |
 | `header()`: a structured WS-Security header, reading `this.options` | `connectors/ExchangeRates.ts` | `ExchangeRates.http` |
 | `request()`: the operation's input from the query | both connector classes | both |
 | `__filterPushedDown` (and when not to set it: `$count`, no `$top`, an inexact term) | `external/ProductCatalog.js` | `ProductCatalog.http` |
+| `__skipPagination` on the `request()` payload: the backend's answer is never cut to a page | `connectors/ExchangeRates.ts` | `ExchangeRates.http` |
 | `response()`: transform the raw entries | `external/ProductCatalog.js` | `ProductCatalog.http` |
 | `mock()` | `connectors/CountryCodes.js` | `CountryCodes.http` |
 | CAP handlers on a SOAP service (`after('READ')`) | `external/ProductCatalog.js` | `ProductCatalog.http` |
@@ -147,7 +149,8 @@ Model and code files are under `consumer/srv/`, requests under `consumer/test/ht
 
 | Feature | Request |
 | --- | --- |
-| `$select`, `$filter` (functions, `in`, `and` / `or`), `$orderby`, `$top`, `$skip`, `$count` | `ProductCatalog.http` |
+| `$select`, `$filter` (`startswith`, `endswith`, `contains`, `tolower`, `in`, `and` / `or`, `null`, negative numbers, a doubled quote), `$orderby`, `$top`, `$skip`, `$count`; `$search` accepted and ignored | `ProductCatalog.http` |
+| The short routes `/<path>/<Entity>` (without `/soap`) | `ProductCatalog.http` |
 | Paging of `cds.query.soap.pageSize` with `@odata.nextLink`, `$skiptoken` | `ProductCatalog.http` |
 | Read by key, 404 | `ProductCatalog.http`, `CountryCodes.http` |
 | 400: `$expand`, a malformed `$filter`, a function on the left of a comparison, a missing mandatory filter, `in` beside `or` | `ProductCatalog.http`, `ExchangeRates.http` |
@@ -158,7 +161,8 @@ Model and code files are under `consumer/srv/`, requests under `consumer/test/ht
 
 | Feature | Where | Request |
 | --- | --- | --- |
-| `srv.run(SELECT ...)` on a SOAP service | `shop-service.js` | `ShopService.http` |
+| `srv.run(SELECT ...)` on a SOAP service; `SELECT.__skipPagination` for every matching row | `shop-service.js` (`Offers`) | `ShopService.http` |
+| `soap.createRequest(...)` and a dispatch of your own | `shop-service.js` (`stockOf`) | `ShopService.http` |
 | `soap.read(...)` | `shop-service.js` | `ShopService.http` |
 | `soap.isSoapService`, `soap.getEntityKeyFields`, `soap.dedupByKeys`, `soap.ApplicationService.FORBIDDEN_SOAP_HEADERS`, `soap.ApplicationService.stripSensitiveHeaders` | `shop-service.js` (`soapInfo`) | `ShopService.http` |
 
@@ -167,7 +171,15 @@ Model and code files are under `consumer/srv/`, requests under `consumer/test/ht
 | Feature | Where |
 | --- | --- |
 | `kind: "soap"`, `wsdl`, `credentials.destination`, `credentials.path` | `consumer/package.json` |
-| `cds.query.soap`: `pageSize`, `multiSelectionConcurrency`, `pushFilters` | `consumer/package.json` |
+| `cds.query.soap`: `pageSize`, `multiSelectionConcurrency`, `pushFilters`, `agentHints` (hints for agents in the docs: `$metadata`, MCP `describe`) | `consumer/package.json` |
 | Local destinations through the `destinations` environment variable | `consumer/package.json` (`watch`) |
 | helmet, CORS and a rate limit for `/soap` on `bootstrap` | `consumer/srv/server.js` |
 | `DEBUG=soap` | `consumer/package.json` (`watch:debug`) |
+
+### AI agents and MCP
+
+`@cap-js/mcp` serves application services only, so a SOAP service is served to agents through a projection in a
+`@remote` service of `cap-smart-connectivity`. The
+[cap-smart-connectivity sample](../cap-smart-connectivity/consumer/AI-AGENTS.md) does that for its SOAP partner
+directory: `CatalogService.PartnerChannels` is an operation with a mandatory filter, and `describe` shows the hints of
+`cds.query.soap.agentHints` next to the connector's own. This sample shows the same hints in `$metadata`.

@@ -50,6 +50,11 @@ class OrderManagementService extends remote.ApplicationService {
             return row ?? req.reject(404, `Order ${req.data.ID} not found`);
         });
 
+        // supportsSkipPagination (true for every remote.ApplicationService): other instances may send this service the
+        // internal "all rows" hint of their association fetches. An own implementation of a service that is the target
+        // of such fetches declares it only when it honors SELECT.__skipPagination.
+        this.on('connectorInfo', () => ({ supportsSkipPagination: this.supportsSkipPagination === true }));
+
         await super.init();
     }
 }

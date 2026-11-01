@@ -5,14 +5,14 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@cap-js/mcp": "1.5.0",
     "cap-smart-connectivity": "^0.2.4",
     "cap-soap-connectivity": "^0.2.1",
     "@sap-cloud-sdk/connectivity": "^4.7.0",
     "@sap-cloud-sdk/http-client": "^4.7.0",
     "@sap-cloud-sdk/resilience": "^4.7.0",
     "@sap/cds": "^10",
-    "express": "^4",
-    "@cap-js/mcp": "1.5.0"
+    "express": "^4"
   },
   "engines": {
     "node": ">=22"
@@ -118,6 +118,16 @@
       },
       "remote": {
         "pagesInParallel": 3,
+        "budget": {
+          "requests": 200,
+          "rows": 100000,
+          "seconds": 60
+        },
+        "audit": true,
+        "agentHints": true,
+        "[production]": {
+          "maskBackendErrors": true
+        },
         "search": {
           "maxRows": 5000
         },

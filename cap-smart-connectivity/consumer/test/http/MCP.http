@@ -41,6 +41,14 @@ Accept: application/json, text/event-stream
 
 { "jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": { "name": "CatalogService-query", "arguments": { "cql": "SELECT from PartnerCustomers { PartnerName, Country, CustomerName, CustomerStatus } where Country = 'DE'" } } }
 
+### Totals: group by and aggregates are computed by the service (one read of the sales system with the filter pushed)
+POST {{catalog}}
+Authorization: Basic alice:alice
+Content-Type: application/json
+Accept: application/json, text/event-stream
+
+{ "jsonrpc": "2.0", "id": 10, "method": "tools/call", "params": { "name": "CatalogService-query", "arguments": { "cql": "SELECT from Orders { CustomerRegion, count(*) as Orders, sum(Amount) as Total } where Status != 'C' group by CustomerRegion order by Total desc" } } }
+
 ### The same @restrict as over OData: bob gets the customers of CompanyCode 1000, pushed to the backend as a filter
 POST {{restricted}}
 Authorization: Basic bob:bob

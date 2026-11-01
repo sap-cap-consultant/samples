@@ -11,7 +11,7 @@ AI agent (any MCP client)                          Fiori / any OData client
           ▼                                               ▼
    /mcp/catalog, /mcp/restricted           /odata/v4/catalog, /odata/v4/restricted
           └────────────── same CAP services ──────────────┘
-                  remote.ApplicationService (cap-smart-connectivity)
+              remote.ApplicationService (cap-smart-connectivity)
                   push-down, mapping, key reads, joins, @restrict
           │ OData V4          │ OData V2           │ OData V4          │ SOAP
           ▼                   ▼                    ▼                   ▼
@@ -28,6 +28,7 @@ AI agent (any MCP client)                          Fiori / any OData client
 🔗 [Downstream: one question, three systems](#-downstream-one-question-three-systems)\
 🔒 [Upstream: the agent is the user](#-upstream-the-agent-is-the-user)\
 ✏️ [Changes through actions](#️-changes-through-actions)\
+🧭 [Guardrails for agents](#-guardrails-for-agents)\
 🚧 [Limits](#-limits)
 
 ---
@@ -36,7 +37,7 @@ AI agent (any MCP client)                          Fiori / any OData client
 
 | File | Purpose |
 | --- | --- |
-| [srv/mcp.cds](srv/mcp.cds) | `@odata @mcp` on CatalogService and RestrictedService, with `@mcp.instructions` (what the agent is told about the systems and codes) |
+| [srv/mcp.cds](srv/mcp.cds) | `@odata @mcp` on CatalogService and RestrictedService, with `@mcp.instructions`: what only this application knows (the systems, the codes, when an action may be called) |
 | [package.json](package.json) | the dependency `@cap-js/mcp`; `cds.mcp.prefix` (tool names `CatalogService-query`, ...), `cds.mcp.autowire` (the mocked user of the automatic registration) |
 | [test/http/MCP.http](test/http/MCP.http) | the requests of this page as raw MCP calls, for any HTTP client that runs `.http` files |
 
@@ -127,6 +128,21 @@ The answer names local fields only (`Title`, `CustomerName`, `CustomerRegion`, `
 the backends' names, URLs or credentials. The join view `PartnerCustomers` does the same for the SOAP partner
 directory and the customer system (one SOAP call, one read by key).
 
+Totals are computed by the service, not by the agent: a `group by` with `count`, `sum`, `avg`, `min` or `max` reads
+the rows the filter leaves once (at most 5000) and groups them here; a group column from another system is read by key,
+like any path column.
+
+```sql
+SELECT from Orders { CustomerRegion, count(*) as Orders, sum(Amount) as Total }
+ where Status != 'C' group by CustomerRegion order by Total desc
+```
+
+```text
+[remote] - GET http://localhost:7007/odata/v4/sales/Orders?$select=Amount,Customer&$filter=Status ne 'C'&$top=5001
+[remote] - GET http://localhost:9009/odata/v4/customer/Customers?$select=GroupID,ID&$filter=(ID eq 'C001' or ID eq 'C002' or ...)
+[remote] - GET http://localhost:9009/odata/v4/customer/CustomerGroups?$select=Region,ID&$filter=(ID eq 'G100' or ID eq 'G300' or ...)
+```
+
 ---
 
 ## 🔒 Upstream: the agent is the user
@@ -161,6 +177,18 @@ A following `query` of `Customers` shows `Status: B`, `IsBlocked: true`. [test/h
 sets it back.
 
 ---
+
+## 🧭 Guardrails for agents
+
+The consumer turns on the opt-in settings of `cds.query.remote` meant for agents (in `package.json`, shared with the
+OData clients):
+
+| Setting | What the agent and the operator get |
+| --- | --- |
+| `agentHints: true` | `describe` shows `Connector hints: ...` in the docs. Of the service: select only the columns needed, keep a limit, totals with `group by` (at most 5000 rows read), which entity comes from which system, the request budget. Of entities and elements: a filter on the whole key is one read by key, the row cap of aggregates, the fields filtered in memory (`Products`), the associations to another system (`Orders.CustomerName` comes from CustomerService). The `@mcp.instructions` only add what the model can not tell. |
+| `budget: { requests: 200, rows: 100000, seconds: 60 }` | One budget per tool call over every service layer: a query that would need more is answered `Request budget exceeded: ... cds.query.remote.budget.requests (200)`, before the next backend request. |
+| `audit: true` | One `[remote-audit]` line per call: `READ CatalogService.Orders {"user":"alice","protocol":"mcp","status":200,"backendRequests":2,"backendRows":4,...}`, no filter values. MCP and OData calls are told apart by `protocol`. |
+| `maskBackendErrors: true` (profile `production`) | A backend's error text (host, table, values) stays in the log; the agent gets a generic message with the reference of the log line. |
 
 ## 🚧 Limits
 

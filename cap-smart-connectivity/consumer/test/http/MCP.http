@@ -5,6 +5,7 @@
 
 @catalog = http://localhost:5005/mcp/catalog
 @restricted = http://localhost:5005/mcp/restricted
+@agent = http://localhost:5005/mcp/agent
 
 
 ### The tools of CatalogService: CatalogService-describe, -query (read only), -call (destructive)
@@ -114,3 +115,46 @@ Content-Type: application/json
 Accept: application/json, text/event-stream
 
 { "jsonrpc": "2.0", "id": 9, "method": "tools/call", "params": { "name": "CatalogService-call", "arguments": { "action": "setCustomerStatus", "parameters": { "ID": "C006", "Status": "A" } } } }
+
+### describe of a projection on the consumer's database (Regions): the hints are its description in describe and
+### $metadata, never in the SQL of the database view (no COMMENT, also for SAP HANA)
+POST {{catalog}}
+Authorization: Basic alice:alice
+Content-Type: application/json
+Accept: application/json, text/event-stream
+
+{ "jsonrpc": "2.0", "id": 14, "method": "tools/call", "params": { "name": "CatalogService-describe", "arguments": { "entities": ["Regions"] } } }
+
+### AgentService (srv/agent-service.cds): describe shows its budget, "A request may use at most 6 backend requests,
+### 40 rows, 30 seconds", and the tighter one of Customers (5 rows)
+POST {{agent}}
+Authorization: Basic alice:alice
+Content-Type: application/json
+Accept: application/json, text/event-stream
+
+{ "jsonrpc": "2.0", "id": 15, "method": "tools/call", "params": { "name": "AgentService-describe", "arguments": { "entities": ["Customers"] } } }
+
+### A query of every customer through AgentService: 502 REMOTE_BUDGET_EXCEEDED, more than @remote.budget.rows of
+### AgentService.Customers (5); the agent narrows its query
+POST {{agent}}
+Authorization: Basic alice:alice
+Content-Type: application/json
+Accept: application/json, text/event-stream
+
+{ "jsonrpc": "2.0", "id": 16, "method": "tools/call", "params": { "name": "AgentService-query", "arguments": { "cql": "SELECT from Customers { ID, CustomerName, Status }" } } }
+
+### The same query through CatalogService: not limited by the budget of AgentService
+POST {{catalog}}
+Authorization: Basic alice:alice
+Content-Type: application/json
+Accept: application/json, text/event-stream
+
+{ "jsonrpc": "2.0", "id": 17, "method": "tools/call", "params": { "name": "CatalogService-query", "arguments": { "cql": "SELECT from Customers { ID, CustomerName, Status }" } } }
+
+### The narrowed query: within the budget
+POST {{agent}}
+Authorization: Basic alice:alice
+Content-Type: application/json
+Accept: application/json, text/event-stream
+
+{ "jsonrpc": "2.0", "id": 18, "method": "tools/call", "params": { "name": "AgentService-query", "arguments": { "cql": "SELECT from Customers { ID, CustomerName, Status } where Status = 'B'" } } }

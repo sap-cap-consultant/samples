@@ -29,6 +29,7 @@ consumer/
 │   ├── overview-service.cds          ← @remote, layer 2 on CatalogService
 │   ├── reference-data-service.cds    ← @remote + @remote.cache
 │   ├── restricted-service.cds        ← @remote + @requires / @restrict
+│   ├── agent-service.cds             ← @remote + @remote.budget / @remote.maskBackendErrors, a service for agents
 │   ├── order-management-service.cds  ← writes, rules, deep writes, operations
 │   ├── order-management-service.js   ← class extends remote.ApplicationService
 │   └── mcp.cds                       ← @odata @mcp and @mcp.instructions on CatalogService, RestrictedService
@@ -147,6 +148,15 @@ pushed to the backend; a user without the attribute gets an empty answer without
 restricted entity is read through the service, so the restriction applies to it too.
 [`srv/restricted-service.cds`](srv/restricted-service.cds),
 [`test/http/RestrictedService.http`](test/http/RestrictedService.http).
+
+### AgentService (`/odata/v4/agent`, `/mcp/agent`): a budget and error masking of its own
+
+A curated service for agents over CatalogService, next to the services of the apps: `@remote.budget` (6 requests, 40
+rows, 30 seconds; `Customers`: 5 rows) and `@remote.maskBackendErrors` apply to the requests sent to it only. A read of
+every customer is a 502 naming `@remote.budget.rows of AgentService.Customers`, the same read through CatalogService
+answers; a refusal of the customer system is masked here and keeps its text there.
+[`srv/agent-service.cds`](srv/agent-service.cds),
+[`test/http/AgentService.http`](test/http/AgentService.http).
 
 ### OrderManagementService (`/odata/v4/order-management`): writes
 

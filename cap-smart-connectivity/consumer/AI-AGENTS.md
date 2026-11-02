@@ -38,6 +38,7 @@ AI agent (any MCP client)                          Fiori / any OData client
 | File | Purpose |
 | --- | --- |
 | [srv/mcp.cds](srv/mcp.cds) | `@odata @mcp` on CatalogService and RestrictedService, with `@mcp.instructions`: what only this application knows (the systems, the codes, when an action may be called) |
+| [srv/agent-service.cds](srv/agent-service.cds) | AgentService, a curated service for agents (`/mcp/agent`) with a budget and error masking of its own |
 | [package.json](package.json) | the dependency `@cap-js/mcp`; `cds.mcp.prefix` (tool names `CatalogService-query`, ...), `cds.mcp.autowire` (the mocked user of the automatic registration) |
 | [test/http/MCP.http](test/http/MCP.http) | the requests of this page as raw MCP calls, for any HTTP client that runs `.http` files |
 
@@ -185,10 +186,11 @@ OData clients):
 
 | Setting | What the agent and the operator get |
 | --- | --- |
-| `agentHints: true` | `describe` shows `Connector hints: ...` in the docs. Of the service: select only the columns needed, keep a limit, totals with `group by` (at most 5000 rows read), which entity comes from which system, the request budget. Of entities and elements: a filter on the whole key is one read by key, the row cap of aggregates, the fields filtered in memory (`Products`), the associations to another system (`Orders.CustomerName` comes from CustomerService). The `@mcp.instructions` only add what the model can not tell. |
+| `agentHints: true` | `describe` shows `Connector hints: ...` in the descriptions (also of `Regions`, a projection on the consumer's database: the hints never reach the SQL of its view). Of the service: select only the columns needed, keep a limit, totals with `group by` (at most 5000 rows read), which entity comes from which system, the request budget. Of entities and elements: a filter on the whole key is one read by key, the row cap of aggregates, the fields filtered in memory (`Products`), the associations to another system (`Orders.CustomerName` comes from CustomerService). The `@mcp.instructions` only add what the model can not tell. |
 | `budget: { requests: 200, rows: 100000, seconds: 60 }` | One budget per tool call over every service layer: a query that would need more is answered `Request budget exceeded: ... cds.query.remote.budget.requests (200)`, before the next backend request. |
 | `audit: true` | One `[remote-audit]` line per call: `READ CatalogService.Orders {"user":"alice","protocol":"mcp","status":200,"backendRequests":2,"backendRows":4,...}`, no filter values. MCP and OData calls are told apart by `protocol`. |
 | `maskBackendErrors: true` (profile `production`) | A backend's error text (host, table, values) stays in the log; the agent gets a generic message with the reference of the log line. |
+| `@remote.budget`, `@remote.maskBackendErrors` (AgentService) | The same guardrails for one service: `describe` of AgentService shows `A request may use at most 6 backend requests, 40 rows, 30 seconds`, of its `Customers` 5 rows; a query of every customer is a tool error naming `@remote.budget.rows of AgentService.Customers (5)`, the same query through CatalogService answers. A refusal of a backend is masked in AgentService only: the apps reading CatalogService keep the backend's text. |
 | `cds.query.soap.agentHints: true` | `describe` of an entity over a SOAP operation with a mandatory filter (`PartnerChannels`) also shows `SOAP hints: Every read needs a filter on PartnerID ...`, next to the connector's own `The SOAP source needs a filter on PartnerID in every read`. A query without it is a tool error with `Mandatory filter field(s) missing: PartnerID`, so the agent can correct the query. |
 
 ## 🚧 Limits

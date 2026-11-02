@@ -1,0 +1,41 @@
+# AgentService: a curated service for agents with its own request budget and error masking (srv/agent-service.cds:
+# @remote.budget, @remote.maskBackendErrors). The same reads and the same action through CatalogService are not
+# limited and keep the backend's text. The MCP requests of AgentService are in MCP.http.
+# Users (package.json, cds.requires.auth): alice is admin.
+
+@server = http://localhost:5005/odata/v4/agent
+@catalog = http://localhost:5005/odata/v4/catalog
+@auth = Basic alice:alice
+
+
+### Within the budget of the service (6 requests, 40 rows): the orders with their customer names, two systems
+GET {{server}}/Orders?$select=ID,Title,CustomerName&$orderby=ID&$top=5
+Authorization: {{auth}}
+
+### Within the budget of the entity (5 rows): three customers
+GET {{server}}/Customers?$select=ID,CustomerName&$orderby=ID&$top=3
+Authorization: {{auth}}
+
+### Every customer: the customer system answers 8 rows, more than @remote.budget.rows of AgentService.Customers (5):
+### 502 REMOTE_BUDGET_EXCEEDED naming the annotation
+GET {{server}}/Customers?$select=ID,CustomerName
+Authorization: {{auth}}
+
+### The same read through CatalogService, which the apps use: no budget of the agent service, every customer
+GET {{catalog}}/Customers?$select=ID,CustomerName
+Authorization: {{auth}}
+
+### A refusal of the customer system through AgentService: masked, "The backend system could not process the request
+### (reference ...)" with the backend's status; the text is in the consumer log under the reference
+POST {{server}}/setCustomerStatus
+Authorization: {{auth}}
+Content-Type: application/json
+
+{ "ID": "C002", "Status": "Z" }
+
+### The same refusal through CatalogService: the backend's text, "Status must be 'A' or 'B'"
+POST {{catalog}}/setCustomerStatus
+Authorization: {{auth}}
+Content-Type: application/json
+
+{ "ID": "C002", "Status": "Z" }

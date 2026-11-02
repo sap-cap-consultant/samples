@@ -138,7 +138,8 @@ what it shows and what to expect; run them top to bottom.
 | [`ReferenceDataService.http`](consumer/test/http/ReferenceDataService.http) | `/odata/v4/reference-data` | the cache of reads by key (`X-Cache`) |
 | [`RestrictedService.http`](consumer/test/http/RestrictedService.http) | `/odata/v4/restricted` | `@requires`, `@restrict` with a user attribute, restricted `$expand` |
 | [`OrderManagementService.http`](consumer/test/http/OrderManagementService.http) | `/odata/v4/order-management` | writes, write rules, deep writes, a non-CRUD API, actions, functions, `readSource` / `writeSource`, `supportsSkipPagination` |
-| [`MCP.http`](consumer/test/http/MCP.http) | `/mcp/catalog`, `/mcp/restricted` | the services for AI agents (see [consumer/AI-AGENTS.md](consumer/AI-AGENTS.md)) |
+| [`AgentService.http`](consumer/test/http/AgentService.http) | `/odata/v4/agent` | a service for agents with its own request budget and error masking (`@remote.budget`, `@remote.maskBackendErrors`), next to CatalogService without them |
+| [`MCP.http`](consumer/test/http/MCP.http) | `/mcp/catalog`, `/mcp/restricted`, `/mcp/agent` | the services for AI agents (see [consumer/AI-AGENTS.md](consumer/AI-AGENTS.md)) |
 | [`Limits.http`](consumer/test/http/Limits.http) | `/odata/v4/catalog` | the guardrails made small enough to trip; start the consumer with `npm run watch:limits` (profile `limits`, see below) |
 
 Users (password = user name): `alice` (admin), `bob` (CompanyCode 1000), `kim` (CompanyCode 2000), `sam` (no
@@ -217,10 +218,11 @@ Where each feature of the package is shown. Model files are under `consumer/srv/
 | Feature | Model | Request |
 | --- | --- | --- |
 | The same services for AI agents over MCP (`@cap-js/mcp`): `describe`, `query` (CQL), `call`; one question over three systems, totals, the agent as the user (`@restrict`) | `consumer/srv/mcp.cds`, [consumer/AI-AGENTS.md](consumer/AI-AGENTS.md) | `MCP.http` |
-| Hints for agents in the docs (`cds.query.remote.agentHints`): of the service (columns, limit, totals, which entity comes from which system, the budget) and of entities and elements (key reads, row caps, fields filtered in memory, associations to another system); OData `Core.Description` / MCP `describe` | every `@remote` service | `CatalogService.http` (`$metadata`), `MCP.http` (`describe`) |
+| Hints for agents in the docs (`cds.query.remote.agentHints`): of the service (columns, limit, totals, which entity comes from which system, the budget) and of entities and elements (key reads, row caps, fields filtered in memory, associations to another system); OData `Core.Description` / MCP `describe`; on a projection on the consumer's database too, never in the SQL of its view | every `@remote` service, `CatalogService.Regions` | `CatalogService.http` (`$metadata`), `MCP.http` (`describe`) |
 | One budget per incoming request over every layer (`cds.query.remote.budget`: requests, rows, seconds; 502 `REMOTE_BUDGET_EXCEEDED`) | `consumer/package.json` | `CatalogService.http`, `Limits.http` (502) |
+| Budget and masking per service and entity (`@remote.budget` record and flattened, `@remote.maskBackendErrors`): only for the requests to that service, the global settings fill the limits it leaves open, the layer below counts against it | `AgentService`, `AgentService.Customers` | `AgentService.http`, `MCP.http` (502 over MCP, the same query through CatalogService answers) |
 | Audit line per request (`cds.query.remote.audit`: user, protocol, status, backend requests and rows; no values) | `consumer/package.json` | every request (consumer log) |
-| Backend error texts kept in the log, a generic message with a reference to the client (`maskBackendErrors`, profiles `production` and `limits`) | `consumer/package.json` | `CatalogService.http` (unmasked), `Limits.http` (masked) |
+| Backend error texts kept in the log, a generic message with a reference to the client (`maskBackendErrors`, profiles `production` and `limits`) | `consumer/package.json` | `CatalogService.http` (unmasked), `Limits.http` (masked), `AgentService.http` (masked by the service only) |
 | CAP's own remote-client log lines and warnings (`cds.query.remote.capClientLog`, profile `limits`) | `consumer/package.json` | `Limits.http` (consumer log) |
 
 ### Caching

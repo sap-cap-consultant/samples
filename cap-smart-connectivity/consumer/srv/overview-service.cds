@@ -56,11 +56,12 @@ service OverviewService {
     /**
      * A product value help over an OData V2 source, whose `$search` is case-sensitive. `search: 'read'` keeps a copy
      * of the rows (filled by the warm-up at start and every 600 seconds; without it the first search reads it): `$search`
-     * is matched on the copy ignoring case, with `$filter`, `$orderby`, the page and `$count` applied to it.
+     * is matched on the copy ignoring case, with `$filter`, `$orderby`, the page and `$count` applied to it. `retry`: a
+     * refresh that fails is tried again after 60 seconds instead of 600; the old copy keeps answering meanwhile.
      */
     @readonly
     @cds.search: { Name, Description, CategoryName }
-    @remote.warmUp: { every: 600, search: 'read' }
+    @remote.warmUp: { every: 600, search: 'read', retry: 60 }
     entity ProductFinder  as projection on catalog.Products {
         key ID,
             Name,

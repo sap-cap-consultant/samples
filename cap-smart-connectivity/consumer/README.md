@@ -97,7 +97,8 @@ one correlation id per request, in `logs/remote-service-latest.log`.
 | --- | --- | --- |
 | `Customers` | producer-customers | alias (`Name as CustomerName`), structured fields (`Address.City as City`), path columns (`_Group.Name`, two hops into the database: `_Group._Region.Manager`), calculated columns (`left`, `concat`, `coalesce`), boolean flags (`IsBlocked`, pushed as `Status eq 'B'`; `IsActive` with `@remote.pushdown: false`), a `virtual` element, `@cds.search`, bound operations forwarded by name and by `@remote.operation` |
 | `CustomerGroups`, `Contacts` | producer-customers | association targets |
-| `setCustomerStatus` | producer-customers | unbound action forwarded to another service (`@remote.operation: 'CustomerService.setStatus'`) |
+| `setCustomerStatus` | producer-customers | unbound action forwarded to another service (`@remote.operation: 'CustomerService.setStatus'`); `@remote.cache.invalidates: [Customers]`: a call drops only what is cached from Customers, the search copies of OverviewService stay |
+| `customerCount` | producer-customers | unbound function forwarded to another service (`@remote.operation: 'CustomerService.customerCount'`); a function drops no cache |
 | `Regions` | the consumer's database | a database source |
 | `Products` | producer-products (V2) | `@remote.filter.local` on the entity (`sap:filterable="false"` fields) and on an element, a `Date` over a date-time source, `@remote.search.maxRows`, `$count` from V2 |
 | `OrderSearch` | producer-sales + producer-customers | `@remote.search.maxRows: 2`: a `$search` with more matches is a 502 before the path column `CustomerName` is read |
@@ -122,7 +123,7 @@ one correlation id per request, in `logs/remote-service-latest.log`.
 | --- | --- |
 | `Customers` | a rename of a rename (`CustomerName as Name`), `exists` flags (`case when exists _Contacts ...`, `exists _Contacts[Role = 'Accounting'] as ...`), `$search` handed to the layer below; `@remote.warmUp: { where: (HasAccounting = true) }` reads the semi-join's key set at start |
 | `CustomerFinder` | a value help over the layer below: the same searched columns and a flag of its own (`HasContacts`) that is not searched; `$search`, `$top`, `$skip` and `$count` are sent down together, the flag is computed for the page |
-| `ProductFinder` | a value help over an OData V2 source (case-sensitive `$search`) with a search copy: `@remote.warmUp: { every: 600, search: 'read' }` keeps the rows, `$search` is matched on them ignoring case with `$filter`, `$orderby`, the page and `$count` |
+| `ProductFinder` | a value help over an OData V2 source (case-sensitive `$search`) with a search copy: `@remote.warmUp: { every: 600, search: 'read', retry: 60 }` keeps the rows (a failed refresh is tried again after 60 s, the old copy answers meanwhile), `$search` is matched on them ignoring case with `$filter`, `$orderby`, the page and `$count`; a function call through the connector (`CatalogService.customerCount`) leaves the copy alone |
 | `AvailableProducts` | a search copy with a `where` and `search: 'push'`: only a `$search` whose `$filter` contains `Blocked eq false` is answered from it; others, and every search before the warm-up filled it, go to the backend |
 | `OrderFlags` | `exists` over an association with a constant ON condition, with an infix filter, through two hops into producer-products |
 | `OpenOrders` | the projection's own WHERE: a plain term pushed, a to-one path and `$now` evaluated in memory; a read by key outside the WHERE is 404 |

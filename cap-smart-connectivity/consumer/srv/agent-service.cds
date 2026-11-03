@@ -38,6 +38,7 @@ service AgentService {
 
     /** Forwarded to CatalogService (and from there to the customer system); a refusal of the backend is masked here. */
     @remote.operation: 'CatalogService.setCustomerStatus'
+    @remote.cache.invalidates: [Customers]
     action setCustomerStatus(ID : String(10), Status : String(1)) returns Customers;
 }
 

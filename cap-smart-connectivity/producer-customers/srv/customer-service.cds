@@ -13,4 +13,6 @@ service CustomerService {
 
     /** Unbound: sets the status of a customer and returns it. */
     action setStatus(ID : String(10), Status : String(1)) returns Customers;
+    /** Unbound, read only: the number of customers with a status. */
+    function customerCount(Status : String(1)) returns Integer;
 }

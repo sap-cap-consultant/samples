@@ -235,7 +235,7 @@ Where each feature of the package is shown. Model files are under `consumer/srv/
 | Semi-join key sets, stale-while-revalidate, time to live | `cds.query.remote.cache.*` in `package.json` | |
 | Warm-up at start and before the time to live ends: `@remote.warmUp` with a `where` per record, `cds.query.remote.warmUp` (`enabled`, `await`, `concurrency`, `tenants`) | `OverviewService.SalesByStatus`, `OverviewService.Customers` | `OverviewService.http` |
 | Warm-up switched off: one record (`enabled: false`), a whole entity in a profile (`@remote.warmUp.enabled: false` in a model only the profile `limits` loads, `cds.requires.[limits].LimitsProfile.model`) | `OverviewService.SalesByStatus`, `consumer/profiles/limits.cds` | the consumer log (`warm-up ...` lines) |
-| Search copy filled by the warm-up (`search`, `every`) | `OverviewService.ProductFinder`, `.AvailableProducts` | `OverviewService.http` |
+| Search copy filled by the warm-up (`search`, `every`, `retry` after a failure) | `OverviewService.ProductFinder`, `.AvailableProducts` | `OverviewService.http` |
 
 ### Security
 
@@ -264,6 +264,7 @@ Where each feature of the package is shown. Model files are under `consumer/srv/
 | `supportsSkipPagination` of the class | `order-management-service.js` (`connectorInfo`) | `OrderManagementService.http` |
 | Bound action / function forwarded by name; `@remote.operation` with another name | `CatalogService.Customers`, `OrderManagementService.Orders` | both |
 | Unbound operation of another service (`@remote.operation: '<Service>.<name>'`) | `CatalogService.setCustomerStatus`, `OrderManagementService.setOrderStatus` | both |
+| Caches after an operation: a function drops nothing, an action without annotation its entity / every cache, `@remote.cache.invalidates: [...]` exactly the listed entities | `CatalogService.setCustomerStatus`, `AgentService.setCustomerStatus`, `CatalogService.customerCount` | `OverviewService.http` (search copy kept after `customerCount`) |
 
 ---
 

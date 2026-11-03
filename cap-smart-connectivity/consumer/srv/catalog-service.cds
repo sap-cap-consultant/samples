@@ -78,9 +78,17 @@ service CatalogService {
             _Customer
     };
 
-    /** Unbound operation of another service: the parameters are sent as they are. */
+    /**
+     * Unbound operation of another service: the parameters are sent as they are. `@remote.cache.invalidates`: a call drops
+     * what is cached from Customers only; without it an unbound action drops every cache and search copy.
+     */
     @remote.operation: 'CustomerService.setStatus'
+    @remote.cache.invalidates: [Customers]
     action setCustomerStatus(ID : String(10), Status : String(1)) returns Customers;
+
+    /** Unbound function of another service: a call drops no cache and no search copy (OData: no side effects). */
+    @remote.operation: 'CustomerService.customerCount'
+    function customerCount(Status : String(1)) returns Integer;
 
     // ---------------------------------------------------------------- the consumer's database
 

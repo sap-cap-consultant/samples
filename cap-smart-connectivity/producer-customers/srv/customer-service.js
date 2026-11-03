@@ -38,6 +38,11 @@ module.exports = cds.service.impl(function () {
         return Number(req.data.Amount) <= Number(customer.CreditLimit);
     });
 
+    this.on('customerCount', async (req) => {
+        const row = await SELECT.one.from(Customers).columns('count(1) as n').where({ Status: req.data.Status });
+        return row.n;
+    });
+
     this.on('setStatus', async (req) => {
         const { ID, Status } = req.data;
         if (!['A', 'B'].includes(Status)) return req.reject(400, `Status must be 'A' or 'B'`);

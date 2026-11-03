@@ -29,6 +29,7 @@
           <NavigationPropertyBinding Path="customer" Target="Customers"/>
         </EntitySet>
         <ActionImport Name="setStatus" Action="CustomerService.setStatus" EntitySet="Customers"/>
+        <FunctionImport Name="customerCount" Function="CustomerService.customerCount"/>
       </EntityContainer>
       <EntityType Name="Customers">
         <Key>
@@ -97,6 +98,10 @@
         <Parameter Name="Status" Type="Edm.String" MaxLength="1"/>
         <ReturnType Type="CustomerService.Customers"/>
       </Action>
+      <Function Name="customerCount" IsBound="false" IsComposable="false">
+        <Parameter Name="Status" Type="Edm.String" MaxLength="1"/>
+        <ReturnType Type="Edm.Int32"/>
+      </Function>
       <Annotations Target="CustomerService.Customers/createdAt">
         <Annotation Term="UI.HiddenFilter" Bool="true"/>
         <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
@@ -126,6 +131,11 @@
         <Annotation Term="Common.Label" String="Changed By"/>
       </Annotations>
       <Annotations Target="CustomerService.creditCheck(CustomerService.Customers,Edm.Decimal)/Amount">
+        <Annotation Term="Core.OptionalParameter">
+          <Record Type="Core.OptionalParameterType"/>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="CustomerService.customerCount(Edm.String)/Status">
         <Annotation Term="Core.OptionalParameter">
           <Record Type="Core.OptionalParameterType"/>
         </Annotation>

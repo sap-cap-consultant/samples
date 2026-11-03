@@ -8,6 +8,11 @@ service CustomerService {
   ) returns Customers;
 
   @cds.external : true
+  function customerCount(
+    Status : String(1) default null
+  ) returns Integer;
+
+  @cds.external : true
   @cds.persistence.skip : true
   entity Customers {
     @odata.Precision : 7

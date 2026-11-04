@@ -8,6 +8,7 @@ Transactional data of the sample. Unlike the other producers it accepts writes, 
 | `Orders` | `ID` | `Customer` holds a customer ID of producer-customers (no association: another system); `Kind` STD / RET; `Status` O / X / C; `Channel` is set by the consumer's handler only |
 | `Items` | `ID` | `OrderID`; `Product` holds a product ID of producer-products |
 | `Projects`, `Packages` | `ProjectID` / `ProjectID, PackageID` | Target of the consumer's deep writes |
+| `PackageTasks` | `ID` | Points to a package by `ProjectID, PackageID` (the consumer's path column over a composite key); `Task` is listed in `Capabilities.FilterRestrictions.NonFilterableProperties` |
 | `Bookings` | `ID` | `CustomerText` is `String(20)` (the consumer cuts its computed text to it) |
 | `Entries` | `CompanyCode, DocNo` | A **non-CRUD API**: every change is a `POST` that names the operation in `Op` (C, U, D); `PATCH` / `DELETE` answer 405 |
 

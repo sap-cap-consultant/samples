@@ -186,4 +186,18 @@ service OverviewService {
      */
     @readonly
     entity OrderTally     as projection on catalog.OrderPages;
+
+    /**
+     * A path column through a composite-key association (Project, Package) whose target, CatalogService.Packages, is
+     * a layer of its own: the key filter `(Project = .. and Package = ..) or ...` reaches the backend with every group,
+     * also when the packages share values (PR01 / WP1, PR02 / WP2, PR03 / WP1, PR02 / WP3).
+     */
+    @readonly
+    entity PackageTasks   as projection on catalog.PackageTasks {
+        *,
+        _Package.PackageName as PackageName
+    };
+
+    @readonly
+    entity Packages       as projection on catalog.Packages;
 }

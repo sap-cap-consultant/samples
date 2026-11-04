@@ -62,7 +62,7 @@ Each app has its own README: [producer-customers](producer-customers/README.md),
 | --- | --- | --- | --- |
 | `producer-customers` | OData V4 (CAP) | customers with a structured address, customer groups, contacts; bound and unbound operations | 9009 |
 | `producer-products` | OData V2 (CAP + `@cap-js-community/odata-v2-adapter`) | products (one `sap:filterable="false"` field, a date-time), categories | 8008 |
-| `producer-sales` | OData V4 (CAP), writable | orders, items, projects, packages, bookings, and a non-CRUD ledger API; bound and unbound operations | 7007 |
+| `producer-sales` | OData V4 (CAP), writable | orders, items, projects, packages, package tasks (one non-filterable field), bookings, and a non-CRUD ledger API; bound and unbound operations | 7007 |
 | `producer-partners` | SOAP 1.1 (plain Node.js, `soap`) | partners with a nested contact: `GetPartners`, and `GetChannels` (one partner per call) | 6006 |
 | `consumer` | | five services, all served by `remote.ApplicationService` | 5005 |
 
@@ -165,6 +165,7 @@ Where each feature of the package is shown. Model files are under `consumer/srv/
 | Field alias (`Name as CustomerName`) | `CatalogService.Customers` | `CatalogService.http` |
 | Structured field (`Address.City as City`) | `CatalogService.Customers` | `CatalogService.http` |
 | Path column, one hop / two hops / into another system / into the database | `CatalogService.Customers`, `.Orders`, `.Items` | `CatalogService.http` |
+| Path column through a composite-key association (`Project`, `Package`) over a layered target, keys sharing values | `OverviewService.PackageTasks`, `CatalogService.Packages` | `OverviewService.http` |
 | JOIN views: inner and left joins, three sources over two systems, a SOAP source, a database source, an expression column, the view's WHERE, ON constants, a mixin association; reads by key, pushed filters, `$search`, `$orderby`, `$count`; rows per source capped by `cds.query.remote.join.maxRows` | `CatalogService.OrderLines`, `.PartnerCustomers`, `.GroupRegions` | `CatalogService.http` |
 | `@cds.persistence.skip` and `@cds.persistence.mock: false` on the JOIN views (no database view; `cds watch` keeps the skip) | `CatalogService.OrderLines`, `.PartnerCustomers`, `.GroupRegions` | |
 | Calculated column (`left`, `concat`, `coalesce`) | `CatalogService.Customers` | `CatalogService.http` |
@@ -205,6 +206,7 @@ Where each feature of the package is shown. Model files are under `consumer/srv/
 | OData V4 | producer-customers, producer-sales | all |
 | OData V2: `$inlinecount`, count as text | `CatalogService.Products` | `CatalogService.http` |
 | `@remote.filter.local` (entity: `sap:filterable="false"` fields; element) | `CatalogService.Products` | `CatalogService.http` |
+| `@remote.filter.local` over OData V4 (`Capabilities.FilterRestrictions.NonFilterableProperties`), paging and `$count` after the in-memory filter | `CatalogService.PackageTasks` | `CatalogService.http` |
 | `Date` over a date-time source (`ReleasedAt as ReleaseDate : Date`) | `CatalogService.Products` | `CatalogService.http` |
 | `@remote.paging: false`; `cds.query.remote.paging` (`true`; profile `limits`: `false`, one request for every row) | `CatalogService.Categories`, `consumer/package.json` | `CatalogService.http`, `Limits.http` |
 | `@remote.search.maxRows` (more matches than allowed: 502 naming `$filter`); `cds.query.remote.search.maxRows` | `CatalogService.OrderSearch`, `.Products`, `consumer/package.json` | `CatalogService.http` |

@@ -46,6 +46,14 @@ entity Packages {
         Description : String(60);
 }
 
+/** Work on a package: ProjectID and PackageID name the package (its composite key). */
+entity PackageTasks {
+    key ID        : String(10);
+        ProjectID : String(10);
+        PackageID : String(10);
+        Task      : String(40);
+}
+
 entity Bookings {
     key ID           : String(10);
         Customer     : String(10);

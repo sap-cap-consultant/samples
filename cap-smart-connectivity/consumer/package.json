@@ -6,7 +6,7 @@
   "private": true,
   "dependencies": {
     "@cap-js/mcp": "1.5.0",
-    "cap-smart-connectivity": "^0.4.0",
+    "cap-smart-connectivity": "^0.4.1",
     "cap-soap-connectivity": "^0.4.0",
     "@sap-cloud-sdk/connectivity": "^4.7.0",
     "@sap-cloud-sdk/http-client": "^4.7.0",

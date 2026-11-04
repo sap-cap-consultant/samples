@@ -169,6 +169,30 @@ service CatalogService {
             _Product
     };
 
+    /**
+     * `@remote.filter.local` over OData V4: the $metadata lists Task in Capabilities.FilterRestrictions.
+     * NonFilterableProperties, so a filter on it (renamed: Activity) is applied in memory and the rest (Project) is
+     * pushed, as for sap:filterable="false" of V2. `_Package` joins on a composite key (Project, Package);
+     * OverviewService reads its PackageName as a path column.
+     */
+    @readonly
+    @remote.filter.local
+    entity PackageTasks   as projection on sales.PackageTasks {
+        key ID,
+            ProjectID   as Project,
+            PackageID   as Package,
+            Task        as Activity,
+            _Package : Association to one Packages on _Package.Project = $self.Project and _Package.Package = $self.Package
+    };
+
+    /** The target of `PackageTasks._Package`, under other names than the backend's (ProjectID, PackageID, Description). */
+    @readonly
+    entity Packages       as projection on sales.Packages {
+        key ProjectID   as Project,
+        key PackageID   as Package,
+            Description as PackageName
+    };
+
     /** Static data: returned from the annotation, no backend call. */
     @readonly
     @response.data: [

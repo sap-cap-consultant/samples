@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Capabilities.V1.xml">
+    <edmx:Include Alias="Capabilities" Namespace="Org.OData.Capabilities.V1"/>
+  </edmx:Reference>
   <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Common.xml">
     <edmx:Include Alias="Common" Namespace="com.sap.vocabularies.Common.v1"/>
   </edmx:Reference>
@@ -26,6 +29,7 @@
         <EntitySet Name="Items" EntityType="SalesService.Items"/>
         <EntitySet Name="Projects" EntityType="SalesService.Projects"/>
         <EntitySet Name="Packages" EntityType="SalesService.Packages"/>
+        <EntitySet Name="PackageTasks" EntityType="SalesService.PackageTasks"/>
         <EntitySet Name="Bookings" EntityType="SalesService.Bookings"/>
         <EntitySet Name="Entries" EntityType="SalesService.Entries"/>
         <ActionImport Name="upsertStatus" Action="SalesService.upsertStatus" EntitySet="Orders"/>
@@ -80,6 +84,15 @@
         <Property Name="ProjectID" Type="Edm.String" MaxLength="10" Nullable="false"/>
         <Property Name="PackageID" Type="Edm.String" MaxLength="10" Nullable="false"/>
         <Property Name="Description" Type="Edm.String" MaxLength="60"/>
+      </EntityType>
+      <EntityType Name="PackageTasks">
+        <Key>
+          <PropertyRef Name="ID"/>
+        </Key>
+        <Property Name="ID" Type="Edm.String" MaxLength="10" Nullable="false"/>
+        <Property Name="ProjectID" Type="Edm.String" MaxLength="10"/>
+        <Property Name="PackageID" Type="Edm.String" MaxLength="10"/>
+        <Property Name="Task" Type="Edm.String" MaxLength="40"/>
       </EntityType>
       <EntityType Name="Bookings">
         <Key>
@@ -147,6 +160,17 @@
         <Annotation Term="Core.Computed" Bool="true"/>
         <Annotation Term="Core.Description" String="User's unique ID"/>
         <Annotation Term="Common.Label" String="Changed By"/>
+      </Annotations>
+      <Annotations Target="SalesService.EntityContainer/PackageTasks">
+        <Annotation Term="Capabilities.FilterRestrictions">
+          <Record Type="Capabilities.FilterRestrictionsType">
+            <PropertyValue Property="NonFilterableProperties">
+              <Collection>
+                <PropertyPath>Task</PropertyPath>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
       </Annotations>
     </Schema>
   </edmx:DataServices>

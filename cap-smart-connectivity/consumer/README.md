@@ -106,6 +106,8 @@ one correlation id per request, in `logs/remote-service-latest.log`.
 | `Categories` | producer-products (V2) | `@remote.paging: false` |
 | `Orders` | producer-sales | paths into another system (`_Customer.Name`, `_Customer._Group.Region`), associations across systems, an association with a constant in its ON condition (`_ActiveItems`) |
 | `Items` | producer-sales | path into producer-products (`_Product.Name`) |
+| `PackageTasks` | producer-sales (V4) | `@remote.filter.local` over V4 (`Task` in `NonFilterableProperties`, renamed `Activity`), a composite-key association `_Package` |
+| `Packages` | producer-sales | the target of `PackageTasks._Package`, renamed keys |
 | `OrderStatus` | none | static data (`@response.data`) |
 | `OrderLines` | producer-sales + producer-products | JOIN view: orders `join` items `left join` products (OData V4 + V2), an expression column (`i.Quantity * i.Price`), the view's WHERE, an ON constant, a mixin association `_Order`; a read by key starts at the items (`@cds.persistence.skip`, `@cds.persistence.mock: false`) |
 | `PartnerCustomers` | producer-partners + producer-customers | JOIN view of a SOAP and an OData source (`@cds.persistence.skip`, `@cds.persistence.mock: false`: the SOAP entity has a table) |
@@ -132,6 +134,7 @@ one correlation id per request, in `logs/remote-service-latest.log`.
 | `SalesByStatus` | GROUP BY on two columns, answered from the aggregate cache (`X-Cache: HIT`); `@remote.warmUp` fills the unfiltered and the `Status = 'O'` entry at start; a third record (`Status = 'C'`) is switched off with `enabled: false` |
 | `OrderMix` | GROUP BY written as `select from ... distinct { ... } group by`: every group with its aggregates, like the `projection on` form |
 | `Currencies` | DISTINCT |
+| `PackageTasks`, `Packages` | A path column (`PackageName`) through the composite-key association of `CatalogService.PackageTasks`, read from `CatalogService.Packages` as a layer of its own |
 | `OrderTally` | A query's own GROUP BY on a layer over `CatalogService.OrderPages` (at most 4 rows per read): every order counted, read from the layer below in pages |
 | `Entries` | writes through a second layer over a non-CRUD backend: the `@remote.write.*` settings CDS copied from `OrderManagementService.Entries` are applied once, by the layer below (one POST with `Op` per write) |
 

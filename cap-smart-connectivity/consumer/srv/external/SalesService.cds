@@ -1,4 +1,4 @@
-/* checksum : 099171aa602d0e670610f3882c87c259 */
+/* checksum : 4d5b76c27665a2c2d4b9e845c48e7a34 */
 @cds.external : true
 service SalesService {
   @cds.external : true
@@ -85,6 +85,16 @@ service SalesService {
     key ProjectID : String(10) not null;
     key PackageID : String(10) not null;
     Description : String(60);
+  };
+
+  @cds.external : true
+  @cds.persistence.skip : true
+  @Capabilities.FilterRestrictions.NonFilterableProperties : [ 'Task' ]
+  entity PackageTasks {
+    key ID : String(10) not null;
+    ProjectID : String(10);
+    PackageID : String(10);
+    Task : String(40);
   };
 
   @cds.external : true

@@ -107,6 +107,17 @@ Authorization: {{alice}}
 GET {{server}}/OrderTally?$apply=groupby((Status),aggregate($count as Orders))&$orderby=Status
 Authorization: {{alice}}
 
+### -------------------------------------------------------------- Path column over a composite key
+### PackageName through _Package (Project, Package) of CatalogService.PackageTasks, read from CatalogService.Packages
+### (a layer of its own) with one key filter for the four packages, which share values: every row has its name
+### (T01 Planning, T02 Counting, T03 Design, T04 Reconciliation, T05 Planning)
+GET {{server}}/PackageTasks?$select=ID,Project,Package,PackageName&$orderby=ID
+Authorization: {{alice}}
+
+### The same association as $expand
+GET {{server}}/PackageTasks('T04')?$expand=_Package
+Authorization: {{alice}}
+
 
 ### -------------------------------------------------------------- Entries: writes through a second layer
 ### CDS copied @remote.write.asInsert / @remote.write.operation from OrderManagementService.Entries; the layer below

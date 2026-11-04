@@ -13,6 +13,13 @@ service SalesService {
     entity Items    as projection on db.Items;
     entity Projects as projection on db.Projects;
     entity Packages as projection on db.Packages;
+
+    /**
+     * Rendered as Capabilities.FilterRestrictions.NonFilterableProperties in the OData V4 $metadata: an S/4HANA
+     * service with it ignores a $filter on Task. The consumer opts in to in-memory evaluation with @remote.filter.local.
+     */
+    @Capabilities.FilterRestrictions.NonFilterableProperties: [Task]
+    entity PackageTasks as projection on db.PackageTasks;
     entity Bookings as projection on db.Bookings;
 
     /**

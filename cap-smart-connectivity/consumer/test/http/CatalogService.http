@@ -138,6 +138,19 @@ GET {{server}}/Categories
 Authorization: {{auth}}
 
 
+### -------------------------------------------------------------- OData V4 filter restrictions (producer-sales)
+
+### Task (here Activity) is listed in Capabilities.FilterRestrictions.NonFilterableProperties of the V4 $metadata.
+### @remote.filter.local evaluates it in memory; Project is still pushed (the backend gets ProjectID eq 'PR01' only).
+### T01, $count 1
+GET {{server}}/PackageTasks?$filter=Activity eq 'Site survey' and Project eq 'PR01'&$count=true
+Authorization: {{auth}}
+
+### Paging and the count after the in-memory filter: T02, $count 4
+GET {{server}}/PackageTasks?$filter=contains(Activity,'o')&$orderby=ID&$top=1&$count=true
+Authorization: {{auth}}
+
+
 ### -------------------------------------------------------------- Across systems (producer-sales -> producer-customers / producer-products)
 
 ### Path columns into another system, two hops: Orders (producer-sales) -> Customers -> CustomerGroups (producer-customers)
